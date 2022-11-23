@@ -1,0 +1,3 @@
+NAME := Currency Conversion Service
+VERSION := 0.0.0
+BRANCH := main
