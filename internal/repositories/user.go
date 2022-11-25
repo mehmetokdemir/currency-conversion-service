@@ -1,6 +1,7 @@
 package repositories
 
 import (
+	"fmt"
 	"github.com/mehmetokdemir/currency-conversion-service/entity"
 	"gorm.io/gorm"
 )
@@ -10,8 +11,8 @@ import (
 type UserRepository interface {
 	Create(user entity.User) (*entity.User, error)
 	Get(id uint) (*entity.User, error)
-	CheckUserIsExistWithSameUsername(username string) bool
-	CheckUserIsExistWithSameEmail(email string) bool
+	IsUserExistWithSameUsername(username string) bool
+	IsUserExistWithSameEmail(email string) bool
 	GetUserByUsername(username string) (*entity.User, error)
 	Migration() error
 }
@@ -34,45 +35,36 @@ func (r *userRepository) Create(user entity.User) (*entity.User, error) {
 }
 
 func (r *userRepository) Get(id uint) (*entity.User, error) {
-	user := &entity.User{ID: id}
-	if err := r.db.First(user).Error; err != nil {
+	var user *entity.User
+	if err := r.db.Where("id =?", id).First(&user).Error; err != nil {
 		return nil, err
 	}
 	return user, nil
 }
 
 func (r *userRepository) GetUserByUsername(username string) (*entity.User, error) {
-	user := &entity.User{Username: username}
-	if err := r.db.First(user).Error; err != nil {
+	var user *entity.User
+	if err := r.db.Where("username =?", username).First(&user).Error; err != nil {
 		return nil, err
 	}
 	return user, nil
 }
 
-func (r *userRepository) CheckUserIsExistWithSameEmail(email string) bool {
-	user := &entity.User{Email: email}
-	if err := r.db.First(user).Error; err != nil {
-		return true
-	}
-
-	if user != nil {
-		return false
-	}
-
-	return true
+func (r *userRepository) IsUserExistWithSameEmail(email string) bool {
+	return r.isUserExistWithCredential("email", email)
 }
 
-func (r *userRepository) CheckUserIsExistWithSameUsername(username string) bool {
-	user := &entity.User{Username: username}
-	if err := r.db.First(user).Error; err != nil {
+func (r *userRepository) isUserExistWithCredential(key, value string) bool {
+	var user *entity.User
+	if err := r.db.Where(fmt.Sprintf("%s =?", key), value).First(&user).Error; err == nil && user != nil {
 		return true
 	}
 
-	if user != nil {
-		return false
-	}
+	return false
+}
 
-	return true
+func (r *userRepository) IsUserExistWithSameUsername(username string) bool {
+	return r.isUserExistWithCredential("username", username)
 }
 
 func (r *userRepository) Migration() error {

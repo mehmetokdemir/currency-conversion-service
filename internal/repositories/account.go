@@ -1,14 +1,15 @@
 package repositories
 
 import (
+	"fmt"
 	"github.com/mehmetokdemir/currency-conversion-service/entity"
 	"gorm.io/gorm"
 )
 
 type AccountRepository interface {
 	Create(account entity.Account) (*entity.Account, error)
-	ListAccounts(userId uint) ([]entity.Account, error)
-
+	ListUserAccounts(userId uint) ([]entity.Account, error)
+	IsUserHasAccountOnGivenCurrency(userId uint, currencyCode string) bool
 	Migration() error
 }
 
@@ -27,9 +28,32 @@ func (r *accountRepository) Migration() error {
 }
 
 func (r *accountRepository) Create(account entity.Account) (*entity.Account, error) {
-	return nil, nil
+	if err := r.db.Create(&account).Error; err != nil {
+		return nil, err
+	}
+	return &account, nil
 }
 
-func (r *accountRepository) ListAccounts(userId uint) ([]entity.Account, error) {
-	return nil, nil
+func (r *accountRepository) ListUserAccounts(userId uint) ([]entity.Account, error) {
+	var accounts []entity.Account
+	if err := r.db.Where("user_id =?", userId).Preload("User").Find(&accounts).Error; err != nil {
+		return nil, err
+	}
+
+	fmt.Println(accounts)
+
+	return accounts, nil
+}
+
+func (r *accountRepository) IsUserHasAccountOnGivenCurrency(userId uint, currencyCode string) bool {
+	var account *entity.Account
+	if err := r.db.Where("user_id =?", userId).Where("currency_code =?", currencyCode).First(&account).Error; err != nil {
+		return false
+	}
+
+	if account == nil {
+		return false
+	}
+
+	return true
 }
