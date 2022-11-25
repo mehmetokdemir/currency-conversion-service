@@ -5,8 +5,8 @@ import (
 )
 
 type Config struct {
-	Db     DbConfig `mapstructure:"db"`
-	Server Server   `mapstructure:"server"`
+	Db     DbConfig     `mapstructure:"db"`
+	Server ServerConfig `mapstructure:"server"`
 }
 
 type DbConfig struct {
@@ -18,26 +18,26 @@ type DbConfig struct {
 	SSLMode  string `mapstructure:"ssl_mode"`
 }
 
-type Server struct {
+type ServerConfig struct {
 	Port string
 }
 
 var vp *viper.Viper
 
-func LoadConfig() (*Config, error) {
+func LoadConfig() (Config, error) {
 	vp = viper.New()
-	var config *Config
+	var config Config
 
 	vp.SetConfigName("config")
 	vp.SetConfigType("json")
 	vp.AddConfigPath("./config")
 	vp.AddConfigPath(".")
 	if err := vp.ReadInConfig(); err != nil {
-		return nil, err
+		return Config{}, err
 	}
 
 	if err := vp.Unmarshal(&config); err != nil {
-		return nil, err
+		return Config{}, err
 	}
 
 	return config, nil
