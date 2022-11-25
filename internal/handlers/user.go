@@ -19,12 +19,12 @@ type UserHandler interface {
 }
 
 type userHandler struct {
-	userService     services.UserService
-	currencyService services.CurrencyService
+	userService    services.UserService
+	accountService services.AccountService
 }
 
-func NewUserHandler(userService services.UserService, currencyService services.CurrencyService) UserHandler {
-	return &userHandler{userService: userService, currencyService: currencyService}
+func NewUserHandler(userService services.UserService, accountService services.AccountService) UserHandler {
+	return &userHandler{userService: userService, accountService: accountService}
 }
 
 func (h *userHandler) UserRoutes(router *gin.RouterGroup) {
@@ -40,8 +40,9 @@ func (h *userHandler) UserRoutes(router *gin.RouterGroup) {
 // @Accept  json
 // @Produce  json
 // @Success 200 {object} helper.Response{data=dto.RegisterResponse} "Success"
-// @Failure 400
-// @Failure 500
+// @Failure 400 {object} helper.Response{error=helper.ResponseError} "Bad Request"
+// @Failure 404 {object} helper.Response{error=helper.ResponseError} "Not Found"
+// @Failure 500 {object} helper.Response{error=helper.ResponseError} "Internal Server Error"
 // @Router /user/register [post]
 func (h *userHandler) Register(c *gin.Context) {
 	var req dto.RegisterRequest
@@ -58,20 +59,24 @@ func (h *userHandler) Register(c *gin.Context) {
 	}
 
 	createdUser, err := h.userService.CreateUser(entity.User{
-		Username:  req.Username,
-		Email:     req.Email,
-		Password:  req.Password,
-		CreatedAt: time.Now().Local(),
-		UpdatedAt: time.Now().Local(),
+		Username:            req.Username,
+		Email:               req.Email,
+		Password:            req.Password,
+		DefaultCurrencyCode: req.CurrencyCode,
+		CreatedAt:           time.Now().Local(),
+		UpdatedAt:           time.Now().Local(),
 	})
 	if err != nil {
 		helper.Error(c, http.StatusInternalServerError, errors.ErrCreateError.Error(), err.Error())
 		return
 	}
 
-	// TODO: CREATE WALLET ACCOUNT
+	if err = h.accountService.CreateUserAccountOnRegistration(createdUser.ID, createdUser.DefaultCurrencyCode); err != nil {
+		helper.Error(c, http.StatusInternalServerError, errors.ErrCreateError.Error(), err.Error())
+		return
+	}
+
 	helper.Success(c, dto.RegisterResponse{Username: createdUser.Username, Email: createdUser.Email})
-	return
 }
 
 // Login godoc
@@ -82,9 +87,9 @@ func (h *userHandler) Register(c *gin.Context) {
 // @Accept  json
 // @Produce  json
 // @Success 200 {object} helper.Response
-// @Failure 400
-// @Failure 404
-// @Failure 500
+// @Failure 400 {object} helper.Response{error=helper.ResponseError} "Bad Request"
+// @Failure 404 {object} helper.Response{error=helper.ResponseError} "Not Found"
+// @Failure 500 {object} helper.Response{error=helper.ResponseError} "Internal Server Error"
 // @Router /user/login [post]
 func (h *userHandler) Login(c *gin.Context) {
 	var req dto.LoginRequest
@@ -102,10 +107,9 @@ func (h *userHandler) Login(c *gin.Context) {
 
 	rsp, err := h.userService.CreateToken(req.Username, req.Password)
 	if err != nil {
-		helper.Error(c, http.StatusInternalServerError, errors.ErrCreateTokenError.Error(), err.Error())
+		helper.Error(c, http.StatusNotFound, errors.ErrCreateTokenError.Error(), err.Error())
 		return
 	}
 
 	helper.Success(c, rsp)
-	return
 }
