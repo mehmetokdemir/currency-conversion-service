@@ -5,13 +5,14 @@ package dto
 //
 
 type RegisterRequest struct {
-	Username string `json:"username" extensions:"x-order=1" example:"john" validate:"required" valid:"required~username|invalid"`         // Username of the creating user
-	Email    string `json:"email" extensions:"x-order=2" example:"john@gmail.com" validate:"required" valid:"required~email|invalid"`     // Email of the creating user
-	Password string `json:"password" extensions:"x-order=3" example:"TopSecret!!!" validate:"required" valid:"required~password|invalid"` // Password of the creating user
+	Username     string `json:"username" extensions:"x-order=1" example:"john" validate:"required" valid:"required~username|invalid"`          // Username of the creating user
+	Email        string `json:"email" extensions:"x-order=2" example:"john@gmail.com" validate:"required" valid:"required~email|invalid"`      // Email of the creating user
+	Password     string `json:"password" extensions:"x-order=3" example:"TopSecret!!!" validate:"required" valid:"required~password|invalid"`  // Password of the creating user
+	CurrencyCode string `json:"currency_code" extensions:"x-order=4" example:"TRY" validate:"required" valid:"required~currency_code|invalid"` // Currency code for default wallet which is given currency
 }
 
 type LoginRequest struct {
-	Username string `json:"username" extensions:"x-order=1" example:"okdemir" validate:"required" valid:"required~username|invalid"`      // Username of the user
+	Username string `json:"username" extensions:"x-order=1" example:"john" validate:"required" valid:"required~username|invalid"`         // Username of the user
 	Password string `json:"password" extensions:"x-order=2" example:"TopSecret!!!" validate:"required" valid:"required~password|invalid"` // Password of the user
 }
 
@@ -25,6 +26,6 @@ type RegisterResponse struct {
 }
 
 type LoginResponse struct {
-	RegisterResponse `json:",inline"`
-	TokenHash        string `json:"token_hash" example:""`
+	RegisterResponse `json:",inline" extensions:"x-order=1"`
+	TokenHash        string `json:"token_hash" extensions:"x-order=2" example:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VyIjp7IklEIjozLCJVc2VybmFtZSI6Impob24iLCJFbWFpbCI6ImpvaG5AZ21haWwuY29tIiwiUGFzc3dvcmQiOiIkMmEkMTAkRkFUb1ZsS2Y2VmZIRGtYL1dLWmVRT0o2U1kuU3Z0SnNYYmhZV2FlTnBrbjU3S0hlNk4vZTIiLCJEZWZhdWx0Q3VycmVuY3lDb2RlIjoiIiwiY3JlYXRlZF9hdCI6IjIwMjItMTEtMjNUMjI6MjA6MDkuMzk0NzQ3KzAzOjAwIiwidXBkYXRlZF9hdCI6IjIwMjItMTEtMjNUMjI6MjA6MDkuMzk0NzQ3KzAzOjAwIiwiZGVsZXRlZF9hdCI6bnVsbH0sImV4cCI6MTY2OTM4OTM3MH0.b_i6GhYzqOp0VvouVi0rw2VG43UZx7lnJXqNEAKMH8o"`
 }
