@@ -1,4 +1,4 @@
-package service
+package services
 
 import (
 	"errors"
@@ -6,13 +6,11 @@ import (
 	"github.com/mehmetokdemir/currency-conversion-service/config"
 	"github.com/mehmetokdemir/currency-conversion-service/dto"
 	"github.com/mehmetokdemir/currency-conversion-service/entity"
-	"github.com/mehmetokdemir/currency-conversion-service/helper"
-	"github.com/mehmetokdemir/currency-conversion-service/repository"
+	"github.com/mehmetokdemir/currency-conversion-service/internal/repositories"
+	"golang.org/x/crypto/bcrypt"
 	"os"
 	"time"
 )
-
-// BUSINESS LOGIC
 
 type UserService interface {
 	CreateUser(user entity.User) (*entity.User, error)
@@ -20,11 +18,11 @@ type UserService interface {
 }
 
 type userService struct {
-	config   *config.Config
-	userRepo repository.UserRepository
+	config   config.Config
+	userRepo repositories.UserRepository
 }
 
-func NewUserService(userRepository repository.UserRepository, config *config.Config) UserService {
+func NewUserService(userRepository repositories.UserRepository, config config.Config) UserService {
 	return &userService{userRepo: userRepository, config: config}
 }
 
@@ -34,7 +32,7 @@ func (s *userService) CreateUser(user entity.User) (*entity.User, error) {
 		return nil, errors.New("duplicated users")
 	}
 
-	hashedPassword, err := helper.HashPassword(user.Password)
+	hashedPassword, err := s.hashPassword(user.Password)
 	if err != nil {
 		return nil, err
 	}
@@ -49,7 +47,7 @@ func (s *userService) CreateToken(username, password string) (*dto.LoginResponse
 		return nil, err
 	}
 
-	if ok := helper.VerifyPassword(user.Password, password); !ok {
+	if ok := s.verifyPassword(user.Password, password); !ok {
 		return nil, errors.New("password mismatch")
 	}
 
@@ -73,4 +71,16 @@ func (s *userService) CreateToken(username, password string) (*dto.LoginResponse
 		},
 		TokenHash: tokenString,
 	}, nil
+}
+
+func (s *userService) verifyPassword(hashedPassword, requestedPassword string) bool {
+	if err := bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(requestedPassword)); err == nil {
+		return true
+	}
+	return false
+}
+
+func (s *userService) hashPassword(password string) (string, error) {
+	bytes, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	return string(bytes), err
 }

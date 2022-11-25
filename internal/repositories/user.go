@@ -1,4 +1,4 @@
-package repository
+package repositories
 
 import (
 	"github.com/mehmetokdemir/currency-conversion-service/entity"

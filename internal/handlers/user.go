@@ -1,4 +1,4 @@
-package handler
+package handlers
 
 import (
 	"github.com/asaskevich/govalidator"
@@ -7,7 +7,7 @@ import (
 	"github.com/mehmetokdemir/currency-conversion-service/entity"
 	"github.com/mehmetokdemir/currency-conversion-service/errors"
 	"github.com/mehmetokdemir/currency-conversion-service/helper"
-	"github.com/mehmetokdemir/currency-conversion-service/service"
+	"github.com/mehmetokdemir/currency-conversion-service/internal/services"
 	"net/http"
 	"time"
 )
@@ -19,11 +19,12 @@ type UserHandler interface {
 }
 
 type userHandler struct {
-	userService service.UserService
+	userService     services.UserService
+	currencyService services.CurrencyService
 }
 
-func NewUserHandler(userService service.UserService) UserHandler {
-	return &userHandler{userService: userService}
+func NewUserHandler(userService services.UserService, currencyService services.CurrencyService) UserHandler {
+	return &userHandler{userService: userService, currencyService: currencyService}
 }
 
 func (h *userHandler) UserRoutes(router *gin.RouterGroup) {
