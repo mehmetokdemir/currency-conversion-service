@@ -8,7 +8,6 @@ import (
 	"github.com/mehmetokdemir/currency-conversion-service/helper"
 	"net/http"
 	"os"
-	"strings"
 )
 
 func middlewareError(statusCode int, message string, detail string) helper.Response {
@@ -25,20 +24,13 @@ func middlewareError(statusCode int, message string, detail string) helper.Respo
 func AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 
-		if c.GetHeader("X-Auth") == "" {
+		if c.GetHeader("X-Auth-Token") == "" {
 			c.AbortWithStatusJSON(http.StatusForbidden, middlewareError(http.StatusForbidden, errors.ErrNotFoundError.Error(), "token not found"))
 			return
 		}
 
-		tokenSplit := strings.Split(c.GetHeader("X-Auth"), " ")
-		if len(tokenSplit) != 2 {
-			c.AbortWithStatusJSON(http.StatusForbidden, middlewareError(http.StatusForbidden, errors.ErrInvalidJwtError.Error(), "jwt is invalid"))
-			return
-		}
-
-		tokenPart := tokenSplit[1]
 		tk := dto.Token{}
-		token, err := jwt.ParseWithClaims(tokenPart, &tk, func(token *jwt.Token) (interface{}, error) {
+		token, err := jwt.ParseWithClaims(c.GetHeader("X-Auth-Token"), &tk, func(token *jwt.Token) (interface{}, error) {
 			return []byte(os.Getenv("token_password")), nil
 		})
 		if err != nil {
