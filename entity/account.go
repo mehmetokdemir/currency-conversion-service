@@ -6,7 +6,7 @@ import (
 )
 
 type Account struct {
-	CurrencyCode string `gorm:"primaryKey;autoIncrement:false" json:"id"`
+	CurrencyCode string `gorm:"primaryKey;autoIncrement:false"`
 	UserId       uint   `gorm:"primaryKey;autoIncrement:false"`
 	User         User   `binding:"required" gorm:"foreignKey:UserId"`
 	Balance      float64
