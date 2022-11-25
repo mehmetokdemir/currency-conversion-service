@@ -6,12 +6,16 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/mehmetokdemir/currency-conversion-service/config"
 	_ "github.com/mehmetokdemir/currency-conversion-service/docs"
-	"github.com/mehmetokdemir/currency-conversion-service/handler"
-	"github.com/mehmetokdemir/currency-conversion-service/repository"
-	"github.com/mehmetokdemir/currency-conversion-service/service"
+	"github.com/mehmetokdemir/currency-conversion-service/internal/handlers"
+	"github.com/mehmetokdemir/currency-conversion-service/internal/repositories"
+	"github.com/mehmetokdemir/currency-conversion-service/internal/services"
 	swaggerFiles "github.com/swaggo/files"
 	swagger "github.com/swaggo/gin-swagger"
 	"log"
+	"time"
+
+	// External imports
+	"github.com/patrickmn/go-cache"
 )
 
 // @title Currency Conversion Service
@@ -25,14 +29,18 @@ func main() {
 		log.Fatal(err)
 	}
 
-	db := serviceConfig.Db.Connect()
+	currencyService := services.NewCurrencyService(cache.New(5*time.Minute, 10*time.Minute))
+	currencyService.SetLocalCacheToCurrencies()
 
-	userRepository := repository.NewUserRepository(db)
+	userRepository := repositories.NewUserRepository(config.Connect(serviceConfig.Db))
 	if err = userRepository.Migration(); err != nil {
 		log.Fatal(err)
 	}
-	userService := service.NewUserService(userRepository, serviceConfig)
-	userHandler := handler.NewUserHandler(userService)
+
+	userService := services.NewUserService(userRepository, serviceConfig)
+	userHandler := handlers.NewUserHandler(userService, currencyService)
+
+	// ACCOUNT SERVICE
 
 	router := gin.New()
 	router.Use(gin.Recovery())
