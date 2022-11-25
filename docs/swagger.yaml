@@ -1,13 +1,61 @@
 basePath: /
 definitions:
+  dto.AccountWallet:
+    properties:
+      balance:
+        type: number
+      currency_code:
+        type: string
+    type: object
+  dto.ExchangeRateOfferRequest:
+    properties:
+      from_currency_code:
+        description: From currency code
+        example: TRY
+        type: string
+        x-order: "1"
+      to_currency_code:
+        description: To currency code
+        example: EUR
+        type: string
+        x-order: "2"
+    required:
+    - from_currency_code
+    - to_currency_code
+    type: object
+  dto.ExchangeRateOfferResponse:
+    properties:
+      exchange_rate:
+        description: Exchange rate with markup rate
+        example: 22
+        type: number
+        x-order: "4"
+      from_currency_code:
+        description: From currency code
+        example: TRY
+        type: string
+        x-order: "2"
+      offer_id:
+        description: ID of the exchange rate offer
+        example: 4
+        type: integer
+        x-order: "1"
+      to_currency_code:
+        description: To currency code
+        example: EUR
+        type: string
+        x-order: "3"
+    type: object
   dto.LoginRequest:
     properties:
       password:
+        description: Password of the user
         example: TopSecret!!!
         type: string
         x-order: "2"
       username:
-        example: okdemir
+        description: Username of the user
+        example: john
         type: string
         x-order: "1"
     required:
@@ -16,19 +64,28 @@ definitions:
     type: object
   dto.RegisterRequest:
     properties:
+      currency_code:
+        description: Currency code for default wallet which is given currency
+        example: TRY
+        type: string
+        x-order: "4"
       email:
+        description: Email of the creating user
         example: john@gmail.com
         type: string
         x-order: "2"
       password:
+        description: Password of the creating user
         example: TopSecret!!!
         type: string
         x-order: "3"
       username:
+        description: Username of the creating user
         example: john
         type: string
         x-order: "1"
     required:
+    - currency_code
     - email
     - password
     - username
@@ -43,6 +100,20 @@ definitions:
         example: john
         type: string
         x-order: "1"
+    type: object
+  dto.UserAccountResponse:
+    properties:
+      id:
+        description: ID of the user
+        type: integer
+      username:
+        description: Username of the user
+        type: string
+      wallets:
+        description: Wallets of the user
+        items:
+          $ref: '#/definitions/dto.AccountWallet'
+        type: array
     type: object
   helper.Response:
     properties:
@@ -68,18 +139,24 @@ definitions:
   helper.ResponseError:
     properties:
       detail:
+        example: user not found
         type: string
+        x-order: "2"
       message:
+        example: NOT_FOUND
         type: string
+        x-order: "1"
     type: object
   helper.ResponseWarning:
     properties:
       code:
         example: invalid
         type: string
+        x-order: "2"
       field:
         example: password
         type: string
+        x-order: "1"
     type: object
 info:
   contact: {}
@@ -87,6 +164,136 @@ info:
   title: Currency Conversion Service
   version: "1.0"
 paths:
+  /account/list:
+    get:
+      consumes:
+      - application/json
+      description: List user's balances with currencies
+      parameters:
+      - description: Auth token of logged-in user.
+        in: header
+        name: X-Auth-Token
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            allOf:
+            - $ref: '#/definitions/helper.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.UserAccountResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            allOf:
+            - $ref: '#/definitions/helper.Response'
+            - properties:
+                error:
+                  $ref: '#/definitions/helper.ResponseError'
+              type: object
+        "403":
+          description: Forbidden
+          schema:
+            allOf:
+            - $ref: '#/definitions/helper.Response'
+            - properties:
+                error:
+                  $ref: '#/definitions/helper.ResponseError'
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            allOf:
+            - $ref: '#/definitions/helper.Response'
+            - properties:
+                error:
+                  $ref: '#/definitions/helper.ResponseError'
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - $ref: '#/definitions/helper.Response'
+            - properties:
+                error:
+                  $ref: '#/definitions/helper.ResponseError'
+              type: object
+      summary: List User Accounts
+      tags:
+      - Account
+  /exchange/rate:
+    post:
+      consumes:
+      - application/json
+      description: Get exchange rate on given currencies
+      parameters:
+      - description: Auth token of logged-in user.
+        in: header
+        name: X-Auth-Token
+        required: true
+        type: string
+      - description: body params
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.ExchangeRateOfferRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            allOf:
+            - $ref: '#/definitions/helper.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.ExchangeRateOfferResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            allOf:
+            - $ref: '#/definitions/helper.Response'
+            - properties:
+                error:
+                  $ref: '#/definitions/helper.ResponseError'
+              type: object
+        "403":
+          description: Forbidden
+          schema:
+            allOf:
+            - $ref: '#/definitions/helper.Response'
+            - properties:
+                error:
+                  $ref: '#/definitions/helper.ResponseError'
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            allOf:
+            - $ref: '#/definitions/helper.Response'
+            - properties:
+                error:
+                  $ref: '#/definitions/helper.ResponseError'
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - $ref: '#/definitions/helper.Response'
+            - properties:
+                error:
+                  $ref: '#/definitions/helper.ResponseError'
+              type: object
+      summary: Get Exchange Rate
+      tags:
+      - Exchange
   /user/login:
     post:
       consumes:
@@ -108,10 +315,31 @@ paths:
             $ref: '#/definitions/helper.Response'
         "400":
           description: Bad Request
+          schema:
+            allOf:
+            - $ref: '#/definitions/helper.Response'
+            - properties:
+                error:
+                  $ref: '#/definitions/helper.ResponseError'
+              type: object
         "404":
           description: Not Found
+          schema:
+            allOf:
+            - $ref: '#/definitions/helper.Response'
+            - properties:
+                error:
+                  $ref: '#/definitions/helper.ResponseError'
+              type: object
         "500":
           description: Internal Server Error
+          schema:
+            allOf:
+            - $ref: '#/definitions/helper.Response'
+            - properties:
+                error:
+                  $ref: '#/definitions/helper.ResponseError'
+              type: object
       summary: Auth User
       tags:
       - User
@@ -141,10 +369,31 @@ paths:
               type: object
         "400":
           description: Bad Request
+          schema:
+            allOf:
+            - $ref: '#/definitions/helper.Response'
+            - properties:
+                error:
+                  $ref: '#/definitions/helper.ResponseError'
+              type: object
         "404":
           description: Not Found
+          schema:
+            allOf:
+            - $ref: '#/definitions/helper.Response'
+            - properties:
+                error:
+                  $ref: '#/definitions/helper.ResponseError'
+              type: object
         "500":
           description: Internal Server Error
+          schema:
+            allOf:
+            - $ref: '#/definitions/helper.Response'
+            - properties:
+                error:
+                  $ref: '#/definitions/helper.ResponseError'
+              type: object
       summary: Create User
       tags:
       - User
