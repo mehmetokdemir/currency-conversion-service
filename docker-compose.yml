@@ -2,12 +2,36 @@ version: '3.8'
 services:
   db:
     image: postgres:latest
-    container_name: currency-conversion
+    container_name: currency-conversion-db
     volumes:
       - ./data/db:/var/lib/postgresql/data
+    networks:
+      - currency-conversion
     ports:
       - "5432:5432"
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
       - POSTGRES_DB=currency-conversion
+  srv:
+    container_name: currency-conversion-service
+    build: .
+    networks:
+      - currency-conversion
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+    environment:
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_NAME=currency-conversion
+      - DB_HOST=currency-conversion-db
+      - DB_PORT=5432
+      - SERVER_PORT=8080
+
+volumes:
+  ./data/db:
+
+networks:
+   currency-conversion:
