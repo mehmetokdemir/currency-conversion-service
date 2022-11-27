@@ -12,6 +12,7 @@ import (
 
 type ExchangeService interface {
 	GetExchangeRateOffer(userId uint, request dto.ExchangeRateOfferRequest) (*dto.ExchangeRateOfferResponse, error)
+	AcceptExchangeRateOffer(userId uint, request dto.ExchangeAcceptOfferRequest) ([]dto.AccountWallet, error)
 }
 
 type exchangeService struct {
@@ -50,9 +51,6 @@ func (s *exchangeService) GetExchangeRateOffer(userId uint, request dto.Exchange
 	}
 
 	exchangeRateWithMarkupRate := exchange.ExchangeRate + exchange.MarkupRate
-	fmt.Println("exchange", exchange.ExchangeRate)
-	fmt.Println("markup", exchange.MarkupRate)
-	fmt.Println("tot", exchangeRateWithMarkupRate)
 	offerId, err := s.createExchangeRateOffer(userId, fromCurrencyCode, toCurrencyCode, exchangeRateWithMarkupRate)
 	if err != nil {
 		return nil, err
@@ -62,8 +60,7 @@ func (s *exchangeService) GetExchangeRateOffer(userId uint, request dto.Exchange
 		OfferId:          offerId,
 		FromCurrencyCode: exchange.FromCurrencyCode,
 		ToCurrencyCode:   exchange.ToCurrencyCode,
-		//ExchangeRate:     math.Ceil((exchangeRateWithMarkupRate * 100) / 100),
-		ExchangeRate: exchangeRateWithMarkupRate,
+		ExchangeRate:     exchangeRateWithMarkupRate,
 	}, nil
 }
 
@@ -84,4 +81,65 @@ func (s *exchangeService) createExchangeRateOffer(userId uint, fromCurrencyCode,
 	}
 
 	return offerId, nil
+}
+
+func (s *exchangeService) AcceptExchangeRateOffer(userId uint, request dto.ExchangeAcceptOfferRequest) ([]dto.AccountWallet, error) {
+	offer, err := s.exchangeRepo.GetOffer(request.OfferId)
+	if err != nil {
+		return nil, err
+	}
+
+	// Check offer for user
+	if offer.UserId != userId {
+		return nil, errors.New("exchange rate is not valid for this user")
+	}
+
+	// Check offer is valid
+	if offer.ExpiresAt < time.Now().Unix() {
+		return nil, errors.New("offer has expired")
+	}
+
+	balance, err := s.accountService.GetUserBalanceOnGivenCurrencyAccount(userId, offer.FromCurrencyCode)
+	if err != nil {
+		return nil, err
+	}
+
+	if request.Amount > balance {
+		return nil, errors.New("not enough balance")
+	}
+
+	if err = s.updateUserBalances(userId, *offer, request.Amount); err != nil {
+		return nil, err
+	}
+
+	accountsWithBalances, err := s.accountService.ListUserAccounts(userId)
+	if err != nil {
+		return nil, err
+	}
+
+	return accountsWithBalances, nil
+}
+
+func (s *exchangeService) updateUserBalances(userId uint, offer entity.Offer, amount float64) error {
+	// Calculate from currency balance
+	fromCurrencyCode, fromBalance := s.calculateFromBalanceAfterAcceptedCurrencyConversion(offer, amount)
+	if err := s.accountService.UpdateUserBalanceOnGivenCurrencyAccount(userId, fromCurrencyCode, fromBalance); err != nil {
+		return err
+	}
+
+	// Calculate to currency balance
+	toCurrencyCode, toBalance := s.calculateToBalanceAfterAcceptedCurrencyConversion(offer, amount)
+	if err := s.accountService.UpdateUserBalanceOnGivenCurrencyAccount(userId, toCurrencyCode, toBalance); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *exchangeService) calculateToBalanceAfterAcceptedCurrencyConversion(offer entity.Offer, amount float64) (string, float64) {
+	return offer.ToCurrencyCode, amount * offer.ExchangeRate
+}
+
+func (s *exchangeService) calculateFromBalanceAfterAcceptedCurrencyConversion(offer entity.Offer, amount float64) (string, float64) {
+	return offer.FromCurrencyCode, -1 * amount
 }
