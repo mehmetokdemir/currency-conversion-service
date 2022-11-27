@@ -14,6 +14,8 @@ type AccountService interface {
 	CreateUserAccount(userId uint, currencyCode string) error
 	ListUserAccounts(userId uint) ([]dto.AccountWallet, error)
 	IsUserHasAccountOnGivenCurrency(userId uint, currencyCode string) bool
+	GetUserBalanceOnGivenCurrencyAccount(userId uint, currencyCode string) (float64, error)
+	UpdateUserBalanceOnGivenCurrencyAccount(userId uint, currencyCode string, balance float64) error
 }
 
 type accountService struct {
@@ -73,4 +75,17 @@ func (s *accountService) ListUserAccounts(userId uint) ([]dto.AccountWallet, err
 	}
 
 	return respondAccounts, err
+}
+
+func (s *accountService) GetUserBalanceOnGivenCurrencyAccount(userId uint, currencyCode string) (float64, error) {
+	return s.accountRepo.GetUserBalanceOnGivenCurrencyAccount(userId, currencyCode)
+}
+
+func (s *accountService) UpdateUserBalanceOnGivenCurrencyAccount(userId uint, currencyCode string, amount float64) error {
+	existingBalance, err := s.GetUserBalanceOnGivenCurrencyAccount(userId, currencyCode)
+	if err != nil {
+		return err
+	}
+	existingBalance += amount
+	return s.accountRepo.UpdateUserBalanceOnGivenCurrencyAccount(userId, currencyCode, existingBalance)
 }
