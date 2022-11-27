@@ -5,40 +5,25 @@ import (
 )
 
 type Config struct {
-	Db     DbConfig     `mapstructure:"db"`
-	Server ServerConfig `mapstructure:"server"`
+	DBHost     string `mapstructure:"DB_HOST"`
+	DBPort     string `mapstructure:"DB_PORT"`
+	DBPassword string `mapstructure:"DB_PASSWORD"`
+	DBUser     string `mapstructure:"DB_USER"`
+	DBName     string `mapstructure:"DB_NAME"`
+	DBSSLMode  string `mapstructure:"DB_SSLMODE"`
+	DBDriver   string `mapstructure:"DB_DRIVER"`
+	ServerPort string `mapstructure:"SERVER_PORT"`
 }
 
-type DbConfig struct {
-	User     string `mapstructure:"user"`
-	Password string `mapstructure:"password"`
-	Name     string `mapstructure:"name"`
-	Host     string `mapstructure:"host"`
-	Port     string `mapstructure:"port"`
-	SSLMode  string `mapstructure:"ssl_mode"`
-}
+func LoadConfig() (config Config, err error) {
+	viper.SetConfigFile(".env")
+	viper.SetConfigType("env")
 
-type ServerConfig struct {
-	Port string
-}
-
-var vp *viper.Viper
-
-func LoadConfig() (Config, error) {
-	vp = viper.New()
-	var config Config
-
-	vp.SetConfigName("config")
-	vp.SetConfigType("json")
-	vp.AddConfigPath("./config")
-	vp.AddConfigPath(".")
-	if err := vp.ReadInConfig(); err != nil {
-		return Config{}, err
+	viper.AutomaticEnv()
+	if err = viper.ReadInConfig(); err != nil {
+		return
 	}
 
-	if err := vp.Unmarshal(&config); err != nil {
-		return Config{}, err
-	}
-
-	return config, nil
+	err = viper.Unmarshal(&config)
+	return
 }
