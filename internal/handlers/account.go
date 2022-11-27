@@ -3,7 +3,6 @@ package handlers
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/mehmetokdemir/currency-conversion-service/dto"
-	"github.com/mehmetokdemir/currency-conversion-service/entity"
 	"github.com/mehmetokdemir/currency-conversion-service/errors"
 	"github.com/mehmetokdemir/currency-conversion-service/helper"
 	"github.com/mehmetokdemir/currency-conversion-service/internal/services"
@@ -42,15 +41,10 @@ func (h *accountHandler) AccountRoutes(router *gin.RouterGroup) {
 // @Failure 500 {object} helper.Response{error=helper.ResponseError} "Internal Server Error"
 // @Router /account/list [get]
 func (h *accountHandler) List(c *gin.Context) {
-	userInContext, ok := c.Get("user")
-	if !ok || userInContext == nil {
-		helper.Error(c, http.StatusNotFound, errors.ErrNotFoundError.Error(), "user not found in context")
-		return
-	}
 
-	user, ok := userInContext.(entity.User)
+	user, ok := getUserFromContext(c)
 	if !ok {
-		helper.Error(c, http.StatusBadRequest, errors.ErrDataTypeError.Error(), "type assertion error")
+		helper.Error(c, http.StatusNotFound, errors.ErrNotFoundError.Error(), "can not get user from context")
 		return
 	}
 
