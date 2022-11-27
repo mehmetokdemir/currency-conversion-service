@@ -25,39 +25,43 @@ import (
 // @BasePath /
 func main() {
 
+	// Load Config
 	serviceConfig, err := config.LoadConfig()
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("12", err)
 	}
 
-	// CURRENCY SERVICE
+	// Currency Service
 	currencyService := services.NewCurrencyService(cache.New(5*time.Minute, 10*time.Minute))
 	currencyService.SetLocalCacheToCurrencies()
 
-	// ACCOUNT SERVICE
-	accountRepository := repositories.NewAccountRepository(config.Connect(serviceConfig.Db))
+	db := config.Connect(serviceConfig)
+
+	// Account Service
+	accountRepository := repositories.NewAccountRepository(db)
 	if err = accountRepository.Migration(); err != nil {
 		log.Fatal(err)
 	}
 	accountService := services.NewAccountService(accountRepository, serviceConfig)
 	accountHandler := handlers.NewAccountHandler(accountService, currencyService)
 
-	// USER SERVICE
-	userRepository := repositories.NewUserRepository(config.Connect(serviceConfig.Db))
+	// User Service
+	userRepository := repositories.NewUserRepository(db)
 	if err = userRepository.Migration(); err != nil {
 		log.Fatal(err)
 	}
 	userService := services.NewUserService(userRepository, serviceConfig, currencyService)
 	userHandler := handlers.NewUserHandler(userService, accountService)
 
-	// EXCHANGE SERVICE
-	exchangeRepository := repositories.NewExchangeRepository(config.Connect(serviceConfig.Db))
+	// Exchange Service
+	exchangeRepository := repositories.NewExchangeRepository(db)
 	if err = exchangeRepository.Migration(); err != nil {
 		log.Fatal(err)
 	}
 	exchangeService := services.NewExchangeService(exchangeRepository, currencyService, accountService)
 	exchangeHandler := handlers.NewExchangeHandler(currencyService, exchangeService)
 
+	// Gin App
 	router := gin.New()
 	router.Use(gin.Recovery())
 
@@ -75,15 +79,17 @@ func main() {
 		accountHandler.AccountRoutes(accountGroup)
 	}
 
-	// Exchange routes
+	// Exchange Routes
 	exchangeGroup := router.Group("/exchange")
 	exchangeGroup.Use(middleware.AuthMiddleware())
 	{
 		exchangeHandler.ExchangeRoutes(exchangeGroup)
 	}
 
+	// Swagger Documentation
 	router.GET("/swagger/*any", swagger.WrapHandler(swaggerFiles.Handler))
-	if err = router.Run(fmt.Sprintf(":%s", serviceConfig.Server.Port)); err != nil {
+
+	if err = router.Run(fmt.Sprintf(":%s", serviceConfig.ServerPort)); err != nil {
 		log.Fatal(err)
 	}
 }
