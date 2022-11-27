@@ -1,7 +1,7 @@
 package repositories
 
 import (
-	"fmt"
+	"errors"
 	"github.com/mehmetokdemir/currency-conversion-service/entity"
 	"gorm.io/gorm"
 )
@@ -10,6 +10,8 @@ type AccountRepository interface {
 	Create(account entity.Account) (*entity.Account, error)
 	ListUserAccounts(userId uint) ([]entity.Account, error)
 	IsUserHasAccountOnGivenCurrency(userId uint, currencyCode string) bool
+	GetUserBalanceOnGivenCurrencyAccount(userId uint, currencyCode string) (float64, error)
+	UpdateUserBalanceOnGivenCurrencyAccount(userId uint, currencyCode string, balance float64) error
 	Migration() error
 }
 
@@ -39,9 +41,6 @@ func (r *accountRepository) ListUserAccounts(userId uint) ([]entity.Account, err
 	if err := r.db.Where("user_id =?", userId).Preload("User").Find(&accounts).Error; err != nil {
 		return nil, err
 	}
-
-	fmt.Println(accounts)
-
 	return accounts, nil
 }
 
@@ -56,4 +55,21 @@ func (r *accountRepository) IsUserHasAccountOnGivenCurrency(userId uint, currenc
 	}
 
 	return true
+}
+
+func (r *accountRepository) GetUserBalanceOnGivenCurrencyAccount(userId uint, currencyCode string) (float64, error) {
+	var account *entity.Account
+	if err := r.db.Where("user_id =?", userId).Where("currency_code =?", currencyCode).First(&account).Error; err != nil {
+		return 0, err
+	}
+
+	if account == nil {
+		return 0, errors.New("account not found on given currency")
+	}
+
+	return account.Balance, nil
+}
+
+func (r *accountRepository) UpdateUserBalanceOnGivenCurrencyAccount(userId uint, currencyCode string, balance float64) error {
+	return r.db.Model(&entity.Account{}).Where("user_id =?", userId).Where("currency_code =?", currencyCode).Update("balance", balance).Error
 }
