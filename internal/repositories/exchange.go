@@ -24,6 +24,29 @@ func NewExchangeRepository(db *gorm.DB) ExchangeRepository {
 	}
 }
 
+func (r *exchangeRepository) GetExchangeRate(fromCurrency, toCurrency string) (*entity.Exchange, error) {
+	var exchange *entity.Exchange
+	if err := r.db.Where("from_currency_code =?", fromCurrency).Where("to_currency_code =?", toCurrency).First(&exchange).Error; err != nil {
+		return nil, err
+	}
+	return exchange, nil
+}
+
+func (r *exchangeRepository) CreateOffer(offer entity.Offer) (uint, error) {
+	if err := r.db.Create(&offer).Error; err != nil {
+		return 0, err
+	}
+	return offer.Id, nil
+}
+
+func (r *exchangeRepository) GetOffer(id uint) (*entity.Offer, error) {
+	var offer *entity.Offer
+	if err := r.db.Where("id =?", id).First(&offer).Error; err != nil {
+		return nil, err
+	}
+	return offer, nil
+}
+
 func (r *exchangeRepository) Migration() error {
 	if err := r.db.AutoMigrate(entity.Offer{}); err != nil {
 		return err
@@ -37,7 +60,7 @@ func (r *exchangeRepository) Migration() error {
 					FromCurrencyCode: "TRY",
 					ToCurrencyCode:   "USD",
 					ExchangeRate:     0.054,
-					MarkupRate:       0.4,
+					MarkupRate:       0.009,
 					CreatedAt:        time.Now(),
 					UpdatedAt:        time.Now(),
 				},
@@ -69,7 +92,7 @@ func (r *exchangeRepository) Migration() error {
 					FromCurrencyCode: "TRY",
 					ToCurrencyCode:   "EUR",
 					ExchangeRate:     0.052,
-					MarkupRate:       0.4,
+					MarkupRate:       0.007,
 					CreatedAt:        time.Now(),
 					UpdatedAt:        time.Now(),
 				},
@@ -90,27 +113,4 @@ func (r *exchangeRepository) Migration() error {
 	}
 
 	return nil
-}
-
-func (r *exchangeRepository) GetExchangeRate(fromCurrency, toCurrency string) (*entity.Exchange, error) {
-	var exchange *entity.Exchange
-	if err := r.db.Where("from_currency_code =?", fromCurrency).Where("to_currency_code =?", toCurrency).First(&exchange).Error; err != nil {
-		return nil, err
-	}
-	return exchange, nil
-}
-
-func (r *exchangeRepository) CreateOffer(offer entity.Offer) (uint, error) {
-	if err := r.db.Create(&offer).Error; err != nil {
-		return 0, err
-	}
-	return offer.Id, nil
-}
-
-func (r *exchangeRepository) GetOffer(id uint) (*entity.Offer, error) {
-	var offer *entity.Offer
-	if err := r.db.Where("id =?", id).First(&offer).Error; err != nil {
-		return nil, err
-	}
-	return offer, nil
 }
