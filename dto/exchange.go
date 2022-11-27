@@ -11,3 +11,8 @@ type ExchangeRateOfferResponse struct {
 	ToCurrencyCode   string  `json:"to_currency_code" extensions:"x-order=3" example:"EUR"`   // To currency code
 	ExchangeRate     float64 `json:"exchange_rate" extensions:"x-order=4" example:"22.00"`    // Exchange rate with markup rate
 }
+
+type ExchangeAcceptOfferRequest struct {
+	OfferId uint    `json:"offer_id" extensions:"x-order=1" example:"4" validate:"required" valid:"required~offer_id|invalid"` // ID of the offer
+	Amount  float64 `json:"amount" extensions:"x-order=2" example:"100" validate:"required" valid:"required~amount|invalid"`   // ID of the offer
+}
