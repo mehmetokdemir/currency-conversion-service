@@ -42,7 +42,10 @@
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/dto.UserAccountResponse"
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/account.WalletAccount"
+                                            }
                                         }
                                     }
                                 }
@@ -151,7 +154,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.ExchangeAcceptOfferRequest"
+                            "$ref": "#/definitions/exchange.AcceptOfferRequest"
                         }
                     }
                 ],
@@ -169,7 +172,7 @@
                                         "data": {
                                             "type": "array",
                                             "items": {
-                                                "$ref": "#/definitions/dto.AccountWallet"
+                                                "$ref": "#/definitions/account.WalletAccount"
                                             }
                                         }
                                     }
@@ -279,7 +282,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.ExchangeRateOfferRequest"
+                            "$ref": "#/definitions/exchange.OfferRequest"
                         }
                     }
                 ],
@@ -295,7 +298,7 @@
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/dto.ExchangeRateOfferResponse"
+                                            "$ref": "#/definitions/exchange.OfferResponse"
                                         }
                                     }
                                 }
@@ -397,15 +400,27 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.LoginRequest"
+                            "$ref": "#/definitions/user.LoginRequest"
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Success",
                         "schema": {
-                            "$ref": "#/definitions/helper.Response"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/helper.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/user.LoginResponse"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "400": {
@@ -485,7 +500,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.RegisterRequest"
+                            "$ref": "#/definitions/user.RegisterRequest"
                         }
                     }
                 ],
@@ -501,7 +516,7 @@
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/dto.RegisterResponse"
+                                            "$ref": "#/definitions/user.RegisterResponse"
                                         }
                                     }
                                 }
@@ -567,7 +582,7 @@
         }
     },
     "definitions": {
-        "dto.AccountWallet": {
+        "account.WalletAccount": {
             "type": "object",
             "properties": {
                 "balance": {
@@ -578,7 +593,7 @@
                 }
             }
         },
-        "dto.ExchangeAcceptOfferRequest": {
+        "exchange.AcceptOfferRequest": {
             "type": "object",
             "required": [
                 "amount",
@@ -599,7 +614,7 @@
                 }
             }
         },
-        "dto.ExchangeRateOfferRequest": {
+        "exchange.OfferRequest": {
             "type": "object",
             "required": [
                 "from_currency_code",
@@ -620,7 +635,7 @@
                 }
             }
         },
-        "dto.ExchangeRateOfferResponse": {
+        "exchange.OfferResponse": {
             "type": "object",
             "properties": {
                 "offer_id": {
@@ -646,97 +661,6 @@
                     "type": "number",
                     "x-order": "4",
                     "example": 22
-                }
-            }
-        },
-        "dto.LoginRequest": {
-            "type": "object",
-            "required": [
-                "password",
-                "username"
-            ],
-            "properties": {
-                "username": {
-                    "description": "Username of the user",
-                    "type": "string",
-                    "x-order": "1",
-                    "example": "john"
-                },
-                "password": {
-                    "description": "Password of the user",
-                    "type": "string",
-                    "x-order": "2",
-                    "example": "TopSecret!!!"
-                }
-            }
-        },
-        "dto.RegisterRequest": {
-            "type": "object",
-            "required": [
-                "currency_code",
-                "email",
-                "password",
-                "username"
-            ],
-            "properties": {
-                "username": {
-                    "description": "Username of the creating user",
-                    "type": "string",
-                    "x-order": "1",
-                    "example": "john"
-                },
-                "email": {
-                    "description": "Email of the creating user",
-                    "type": "string",
-                    "x-order": "2",
-                    "example": "john@gmail.com"
-                },
-                "password": {
-                    "description": "Password of the creating user",
-                    "type": "string",
-                    "x-order": "3",
-                    "example": "TopSecret!!!"
-                },
-                "currency_code": {
-                    "description": "Currency code for default wallet which is given currency",
-                    "type": "string",
-                    "x-order": "4",
-                    "example": "TRY"
-                }
-            }
-        },
-        "dto.RegisterResponse": {
-            "type": "object",
-            "properties": {
-                "username": {
-                    "type": "string",
-                    "x-order": "1",
-                    "example": "john"
-                },
-                "email": {
-                    "type": "string",
-                    "x-order": "2",
-                    "example": "john@gmail.com"
-                }
-            }
-        },
-        "dto.UserAccountResponse": {
-            "type": "object",
-            "properties": {
-                "id": {
-                    "description": "ID of the user",
-                    "type": "integer"
-                },
-                "username": {
-                    "description": "Username of the user",
-                    "type": "string"
-                },
-                "wallets": {
-                    "description": "Wallets of the user",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/dto.AccountWallet"
-                    }
                 }
             }
         },
@@ -796,6 +720,97 @@
                     "type": "string",
                     "x-order": "2",
                     "example": "invalid"
+                }
+            }
+        },
+        "user.LoginRequest": {
+            "type": "object",
+            "required": [
+                "password",
+                "username"
+            ],
+            "properties": {
+                "username": {
+                    "description": "Username of the user",
+                    "type": "string",
+                    "x-order": "1",
+                    "example": "john"
+                },
+                "password": {
+                    "description": "Password of the user",
+                    "type": "string",
+                    "x-order": "2",
+                    "example": "TopSecret!!!"
+                }
+            }
+        },
+        "user.LoginResponse": {
+            "type": "object",
+            "properties": {
+                "username": {
+                    "type": "string",
+                    "x-order": "1",
+                    "example": "john"
+                },
+                "email": {
+                    "type": "string",
+                    "x-order": "2",
+                    "example": "john@gmail.com"
+                },
+                "token_hash": {
+                    "type": "string",
+                    "x-order": "2",
+                    "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VyIjp7IklEIjozLCJVc2VybmFtZSI6Impob24iLCJFbWFpbCI6ImpvaG5AZ21haWwuY29tIiwiUGFzc3dvcmQiOiIkMmEkMTAkRkFUb1ZsS2Y2VmZIRGtYL1dLWmVRT0o2U1kuU3Z0SnNYYmhZV2FlTnBrbjU3S0hlNk4vZTIiLCJEZWZhdWx0Q3VycmVuY3lDb2RlIjoiIiwiY3JlYXRlZF9hdCI6IjIwMjItMTEtMjNUMjI6MjA6MDkuMzk0NzQ3KzAzOjAwIiwidXBkYXRlZF9hdCI6IjIwMjItMTEtMjNUMjI6MjA6MDkuMzk0NzQ3KzAzOjAwIiwiZGVsZXRlZF9hdCI6bnVsbH0sImV4cCI6MTY2OTM4OTM3MH0.b_i6GhYzqOp0VvouVi0rw2VG43UZx7lnJXqNEAKMH8o"
+                }
+            }
+        },
+        "user.RegisterRequest": {
+            "type": "object",
+            "required": [
+                "currency_code",
+                "email",
+                "password",
+                "username"
+            ],
+            "properties": {
+                "username": {
+                    "description": "Username of the creating user",
+                    "type": "string",
+                    "x-order": "1",
+                    "example": "john"
+                },
+                "email": {
+                    "description": "Email of the creating user",
+                    "type": "string",
+                    "x-order": "2",
+                    "example": "john@gmail.com"
+                },
+                "password": {
+                    "description": "Password of the creating user",
+                    "type": "string",
+                    "x-order": "3",
+                    "example": "TopSecret!!!"
+                },
+                "currency_code": {
+                    "description": "Currency code for default wallet which is given currency",
+                    "type": "string",
+                    "x-order": "4",
+                    "example": "TRY"
+                }
+            }
+        },
+        "user.RegisterResponse": {
+            "type": "object",
+            "properties": {
+                "username": {
+                    "type": "string",
+                    "x-order": "1",
+                    "example": "john"
+                },
+                "email": {
+                    "type": "string",
+                    "x-order": "2",
+                    "example": "john@gmail.com"
                 }
             }
         }
