@@ -1,14 +1,13 @@
-package repositories
+package account
 
 import (
 	"errors"
-	"github.com/mehmetokdemir/currency-conversion-service/entity"
 	"gorm.io/gorm"
 )
 
-type AccountRepository interface {
-	Create(account entity.Account) (*entity.Account, error)
-	ListUserAccounts(userId uint) ([]entity.Account, error)
+type IAccountRepository interface {
+	CreateAccount(account Account) (*Account, error)
+	ListUserAccounts(userId uint) ([]Account, error)
 	IsUserHasAccountOnGivenCurrency(userId uint, currencyCode string) bool
 	GetUserBalanceOnGivenCurrencyAccount(userId uint, currencyCode string) (float64, error)
 	UpdateUserBalanceOnGivenCurrencyAccount(userId uint, currencyCode string, balance float64) error
@@ -19,33 +18,33 @@ type accountRepository struct {
 	db *gorm.DB
 }
 
-func NewAccountRepository(db *gorm.DB) AccountRepository {
+func NewAccountRepository(db *gorm.DB) IAccountRepository {
 	return &accountRepository{
 		db: db,
 	}
 }
 
 func (r *accountRepository) Migration() error {
-	return r.db.AutoMigrate(entity.Account{})
+	return r.db.AutoMigrate(Account{})
 }
 
-func (r *accountRepository) Create(account entity.Account) (*entity.Account, error) {
+func (r *accountRepository) CreateAccount(account Account) (*Account, error) {
 	if err := r.db.Create(&account).Error; err != nil {
 		return nil, err
 	}
 	return &account, nil
 }
 
-func (r *accountRepository) ListUserAccounts(userId uint) ([]entity.Account, error) {
-	var accounts []entity.Account
-	if err := r.db.Where("user_id =?", userId).Preload("User").Find(&accounts).Error; err != nil {
+func (r *accountRepository) ListUserAccounts(userId uint) ([]Account, error) {
+	var accounts []Account
+	if err := r.db.Where("user_id =?", userId).Find(&accounts).Error; err != nil {
 		return nil, err
 	}
 	return accounts, nil
 }
 
 func (r *accountRepository) IsUserHasAccountOnGivenCurrency(userId uint, currencyCode string) bool {
-	var account *entity.Account
+	var account *Account
 	if err := r.db.Where("user_id =?", userId).Where("currency_code =?", currencyCode).First(&account).Error; err != nil {
 		return false
 	}
@@ -58,8 +57,8 @@ func (r *accountRepository) IsUserHasAccountOnGivenCurrency(userId uint, currenc
 }
 
 func (r *accountRepository) GetUserBalanceOnGivenCurrencyAccount(userId uint, currencyCode string) (float64, error) {
-	var account *entity.Account
-	if err := r.db.Where("user_id =?", userId).Where("currency_code =?", currencyCode).First(&account).Error; err != nil {
+	var account *Account
+	if err := r.db.Select("balance").Where("user_id =?", userId).Where("currency_code =?", currencyCode).First(&account).Error; err != nil {
 		return 0, err
 	}
 
@@ -71,5 +70,5 @@ func (r *accountRepository) GetUserBalanceOnGivenCurrencyAccount(userId uint, cu
 }
 
 func (r *accountRepository) UpdateUserBalanceOnGivenCurrencyAccount(userId uint, currencyCode string, balance float64) error {
-	return r.db.Model(&entity.Account{}).Where("user_id =?", userId).Where("currency_code =?", currencyCode).Update("balance", balance).Error
+	return r.db.Model(&Account{}).Where("user_id =?", userId).Where("currency_code =?", currencyCode).Update("balance", balance).Error
 }

@@ -1,18 +1,14 @@
-package services
+package account
 
 import (
 	"github.com/mehmetokdemir/currency-conversion-service/config"
-	"github.com/mehmetokdemir/currency-conversion-service/dto"
-	"github.com/mehmetokdemir/currency-conversion-service/entity"
-	"github.com/mehmetokdemir/currency-conversion-service/internal/repositories"
 	"strings"
 	"time"
 )
 
-type AccountService interface {
-	CreateUserAccountOnRegistration(userId uint, currencyCode string) error
-	CreateUserAccount(userId uint, currencyCode string) error
-	ListUserAccounts(userId uint) ([]dto.AccountWallet, error)
+type IAccountService interface {
+	CreateUserAccount(userId uint, currencyCode string, isOnRegistration bool) (*Account, error)
+	ListUserAccounts(userId uint) ([]WalletAccount, error)
 	IsUserHasAccountOnGivenCurrency(userId uint, currencyCode string) bool
 	GetUserBalanceOnGivenCurrencyAccount(userId uint, currencyCode string) (float64, error)
 	UpdateUserBalanceOnGivenCurrencyAccount(userId uint, currencyCode string, balance float64) error
@@ -20,24 +16,20 @@ type AccountService interface {
 
 type accountService struct {
 	config      config.Config
-	accountRepo repositories.AccountRepository
+	accountRepo IAccountRepository
 }
 
-func NewAccountService(accountRepository repositories.AccountRepository, config config.Config) AccountService {
+func NewAccountService(accountRepository IAccountRepository, config config.Config) IAccountService {
 	return &accountService{accountRepo: accountRepository, config: config}
 }
 
-func (s *accountService) CreateUserAccountOnRegistration(userId uint, currencyCode string) error {
-	return s.createAccount(userId, currencyCode, true)
-}
-
-func (s *accountService) createAccount(userId uint, currencyCode string, isOnRegistration bool) error {
+func (s *accountService) CreateUserAccount(userId uint, currencyCode string, isOnRegistration bool) (*Account, error) {
 	var balance float64 = 0
 	if isOnRegistration {
 		balance = 10000
 	}
 
-	acc := entity.Account{
+	account := Account{
 		CurrencyCode: strings.ToUpper(currencyCode),
 		UserId:       userId,
 		Balance:      balance,
@@ -45,30 +37,26 @@ func (s *accountService) createAccount(userId uint, currencyCode string, isOnReg
 		UpdatedAt:    time.Now(),
 	}
 
-	if _, err := s.accountRepo.Create(acc); err != nil {
-		return err
+	if _, err := s.accountRepo.CreateAccount(account); err != nil {
+		return nil, err
 	}
 
-	return nil
-}
-
-func (s *accountService) CreateUserAccount(userId uint, currencyCode string) error {
-	return s.createAccount(userId, currencyCode, false)
+	return &account, nil
 }
 
 func (s *accountService) IsUserHasAccountOnGivenCurrency(userId uint, currencyCode string) bool {
 	return s.accountRepo.IsUserHasAccountOnGivenCurrency(userId, strings.ToUpper(currencyCode))
 }
 
-func (s *accountService) ListUserAccounts(userId uint) ([]dto.AccountWallet, error) {
+func (s *accountService) ListUserAccounts(userId uint) ([]WalletAccount, error) {
 	accounts, err := s.accountRepo.ListUserAccounts(userId)
 	if err != nil {
 		return nil, err
 	}
 
-	var respondAccounts []dto.AccountWallet
+	var respondAccounts []WalletAccount
 	for _, account := range accounts {
-		respondAccounts = append(respondAccounts, dto.AccountWallet{
+		respondAccounts = append(respondAccounts, WalletAccount{
 			CurrencyCode: account.CurrencyCode,
 			Balance:      account.Balance,
 		})
