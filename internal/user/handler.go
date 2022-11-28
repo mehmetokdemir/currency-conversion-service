@@ -1,30 +1,33 @@
-package handlers
+package user
 
 import (
 	"github.com/asaskevich/govalidator"
 	"github.com/gin-gonic/gin"
-	"github.com/mehmetokdemir/currency-conversion-service/dto"
-	"github.com/mehmetokdemir/currency-conversion-service/entity"
 	"github.com/mehmetokdemir/currency-conversion-service/errors"
 	"github.com/mehmetokdemir/currency-conversion-service/helper"
-	"github.com/mehmetokdemir/currency-conversion-service/internal/services"
+	//"github.com/mehmetokdemir/currency-conversion-service/internal/account"
 	"net/http"
 	"time"
 )
 
-type UserHandler interface {
+type Handler interface {
 	Register(c *gin.Context)
 	Login(c *gin.Context)
 	UserRoutes(router *gin.RouterGroup)
 }
 
 type userHandler struct {
-	userService    services.UserService
-	accountService services.AccountService
+	userService IUserService
+	//accountService account.IAccountService
 }
 
-func NewUserHandler(userService services.UserService, accountService services.AccountService) UserHandler {
+/*
+func NewUserHandler(userService IUserService, accountService account.IAccountService) Handler {
 	return &userHandler{userService: userService, accountService: accountService}
+} */
+
+func NewUserHandler(userService IUserService) Handler {
+	return &userHandler{userService: userService}
 }
 
 func (h *userHandler) UserRoutes(router *gin.RouterGroup) {
@@ -35,17 +38,17 @@ func (h *userHandler) UserRoutes(router *gin.RouterGroup) {
 // Register godoc
 // @Summary Create User
 // @Description Create a user
-// @Param request body dto.RegisterRequest true "body params"
 // @Tags User
 // @Accept  json
 // @Produce  json
-// @Success 200 {object} helper.Response{data=dto.RegisterResponse} "Success"
+// @Param request body RegisterRequest true "body params"
+// @Success 200 {object} helper.Response{data=RegisterResponse} "Success"
 // @Failure 400 {object} helper.Response{error=helper.ResponseError} "Bad Request"
 // @Failure 404 {object} helper.Response{error=helper.ResponseError} "Not Found"
 // @Failure 500 {object} helper.Response{error=helper.ResponseError} "Internal Server Error"
 // @Router /user/register [post]
 func (h *userHandler) Register(c *gin.Context) {
-	var req dto.RegisterRequest
+	var req RegisterRequest
 	if err := c.BindJSON(&req); err != nil {
 		helper.Error(c, http.StatusBadRequest, errors.ErrBindJson.Error(), err.Error())
 		return
@@ -58,7 +61,7 @@ func (h *userHandler) Register(c *gin.Context) {
 		return
 	}
 
-	createdUser, err := h.userService.CreateUser(entity.User{
+	createdUser, err := h.userService.CreateUser(User{
 		Username:            req.Username,
 		Email:               req.Email,
 		Password:            req.Password,
@@ -71,28 +74,29 @@ func (h *userHandler) Register(c *gin.Context) {
 		return
 	}
 
-	if err = h.accountService.CreateUserAccountOnRegistration(createdUser.ID, createdUser.DefaultCurrencyCode); err != nil {
-		helper.Error(c, http.StatusInternalServerError, errors.ErrCreateError.Error(), err.Error())
-		return
-	}
+	/*
+		if err = h.accountService.CreateUserAccountOnRegistration(createdUser.Id, createdUser.DefaultCurrencyCode); err != nil {
+			helper.Error(c, http.StatusInternalServerError, errors.ErrCreateError.Error(), err.Error())
+			return
+		}*/
 
-	helper.Success(c, dto.RegisterResponse{Username: createdUser.Username, Email: createdUser.Email})
+	helper.Success(c, RegisterResponse{Username: createdUser.Username, Email: createdUser.Email})
 }
 
 // Login godoc
 // @Summary Auth User
 // @Description User Login
-// @Param request body dto.LoginRequest true "body params"
 // @Tags User
 // @Accept  json
 // @Produce  json
-// @Success 200 {object} helper.Response
+// @Param request body LoginRequest true "body params"
+// @Success 200 {object} helper.Response{data=LoginResponse} "Success"
 // @Failure 400 {object} helper.Response{error=helper.ResponseError} "Bad Request"
 // @Failure 404 {object} helper.Response{error=helper.ResponseError} "Not Found"
 // @Failure 500 {object} helper.Response{error=helper.ResponseError} "Internal Server Error"
 // @Router /user/login [post]
 func (h *userHandler) Login(c *gin.Context) {
-	var req dto.LoginRequest
+	var req LoginRequest
 	if err := c.BindJSON(&req); err != nil {
 		helper.Error(c, http.StatusBadRequest, errors.ErrBindJson.Error(), err.Error())
 		return

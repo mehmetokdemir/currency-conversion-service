@@ -1,17 +1,17 @@
-package repositories
+package user
 
 import (
+	"errors"
 	"fmt"
-	"github.com/mehmetokdemir/currency-conversion-service/entity"
+	_ "github.com/golang/mock/mockgen/model"
 	"gorm.io/gorm"
 )
 
-type UserRepository interface {
-	Create(user entity.User) (*entity.User, error)
-	Get(id uint) (*entity.User, error)
+type IUserRepository interface {
+	CreateUser(user User) (*User, error)
 	IsUserExistWithSameUsername(username string) bool
 	IsUserExistWithSameEmail(email string) bool
-	GetUserByUsername(username string) (*entity.User, error)
+	GetUserByUsername(username string) (*User, error)
 	Migration() error
 }
 
@@ -19,31 +19,23 @@ type userRepository struct {
 	db *gorm.DB
 }
 
-func NewUserRepository(db *gorm.DB) UserRepository {
+func NewUserRepository(db *gorm.DB) IUserRepository {
 	return &userRepository{
 		db: db,
 	}
 }
 
-func (r *userRepository) Create(user entity.User) (*entity.User, error) {
+func (r *userRepository) CreateUser(user User) (*User, error) {
 	if err := r.db.Create(&user).Error; err != nil {
 		return nil, err
 	}
 	return &user, nil
 }
 
-func (r *userRepository) Get(id uint) (*entity.User, error) {
-	var user *entity.User
-	if err := r.db.Where("id =?", id).First(&user).Error; err != nil {
-		return nil, err
-	}
-	return user, nil
-}
-
-func (r *userRepository) GetUserByUsername(username string) (*entity.User, error) {
-	var user *entity.User
-	if err := r.db.Where("username =?", username).First(&user).Error; err != nil {
-		return nil, err
+func (r *userRepository) GetUserByUsername(username string) (*User, error) {
+	var user *User
+	if err := r.db.Model(&User{}).Where("username =?", username).First(&user).Error; err != nil {
+		return nil, errors.New("user not found")
 	}
 	return user, nil
 }
@@ -53,7 +45,7 @@ func (r *userRepository) IsUserExistWithSameEmail(email string) bool {
 }
 
 func (r *userRepository) isUserExistWithCredential(key, value string) bool {
-	var user *entity.User
+	var user *User
 	if err := r.db.Where(fmt.Sprintf("%s =?", key), value).First(&user).Error; err == nil && user != nil {
 		return true
 	}
@@ -66,5 +58,5 @@ func (r *userRepository) IsUserExistWithSameUsername(username string) bool {
 }
 
 func (r *userRepository) Migration() error {
-	return r.db.AutoMigrate(entity.User{})
+	return r.db.AutoMigrate(User{})
 }
