@@ -21,7 +21,7 @@ import (
 )
 
 // @title Currency Conversion Service
-// @version 1.0
+// @version 1.0.8
 // @description Currency Conversion Service.
 // @BasePath /
 func main() {
