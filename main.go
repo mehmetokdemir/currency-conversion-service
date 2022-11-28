@@ -6,9 +6,10 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/mehmetokdemir/currency-conversion-service/config"
 	_ "github.com/mehmetokdemir/currency-conversion-service/docs"
-	"github.com/mehmetokdemir/currency-conversion-service/internal/handlers"
-	"github.com/mehmetokdemir/currency-conversion-service/internal/repositories"
-	"github.com/mehmetokdemir/currency-conversion-service/internal/services"
+	"github.com/mehmetokdemir/currency-conversion-service/internal/account"
+	"github.com/mehmetokdemir/currency-conversion-service/internal/currency"
+	"github.com/mehmetokdemir/currency-conversion-service/internal/exchange"
+	"github.com/mehmetokdemir/currency-conversion-service/internal/user"
 	"github.com/mehmetokdemir/currency-conversion-service/middleware"
 	swaggerFiles "github.com/swaggo/files"
 	swagger "github.com/swaggo/gin-swagger"
@@ -28,38 +29,38 @@ func main() {
 	// Load Config
 	serviceConfig, err := config.LoadConfig()
 	if err != nil {
-		log.Fatal("12", err)
+		log.Fatal(err)
 	}
 
 	// Currency Service
-	currencyService := services.NewCurrencyService(cache.New(5*time.Minute, 10*time.Minute))
+	currencyService := currency.NewCurrencyService(cache.New(5*time.Minute, 10*time.Minute))
 	currencyService.SetLocalCacheToCurrencies()
 
 	db := config.Connect(serviceConfig)
 
 	// Account Service
-	accountRepository := repositories.NewAccountRepository(db)
+	accountRepository := account.NewAccountRepository(db)
 	if err = accountRepository.Migration(); err != nil {
 		log.Fatal(err)
 	}
-	accountService := services.NewAccountService(accountRepository, serviceConfig)
-	accountHandler := handlers.NewAccountHandler(accountService, currencyService)
+	accountService := account.NewAccountService(accountRepository, serviceConfig)
+	accountHandler := account.NewAccountHandler(accountService, currencyService)
 
 	// User Service
-	userRepository := repositories.NewUserRepository(db)
+	userRepository := user.NewUserRepository(db)
 	if err = userRepository.Migration(); err != nil {
 		log.Fatal(err)
 	}
-	userService := services.NewUserService(userRepository, serviceConfig, currencyService)
-	userHandler := handlers.NewUserHandler(userService, accountService)
+	userService := user.NewUserService(userRepository, serviceConfig, currencyService, accountService)
+	userHandler := user.NewUserHandler(userService)
 
 	// Exchange Service
-	exchangeRepository := repositories.NewExchangeRepository(db)
+	exchangeRepository := exchange.NewExchangeRepository(db)
 	if err = exchangeRepository.Migration(); err != nil {
 		log.Fatal(err)
 	}
-	exchangeService := services.NewExchangeService(exchangeRepository, currencyService, accountService)
-	exchangeHandler := handlers.NewExchangeHandler(currencyService, exchangeService)
+	exchangeService := exchange.NewExchangeService(exchangeRepository, currencyService, accountService)
+	exchangeHandler := exchange.NewExchangeHandler(currencyService, exchangeService)
 
 	// Gin App
 	router := gin.New()
