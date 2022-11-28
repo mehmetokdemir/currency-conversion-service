@@ -1,36 +1,35 @@
-package services
+package exchange
 
 import (
 	"errors"
 	"fmt"
-	"github.com/mehmetokdemir/currency-conversion-service/dto"
-	"github.com/mehmetokdemir/currency-conversion-service/entity"
-	"github.com/mehmetokdemir/currency-conversion-service/internal/repositories"
+	"github.com/mehmetokdemir/currency-conversion-service/internal/account"
+	"github.com/mehmetokdemir/currency-conversion-service/internal/currency"
 	"strings"
 	"time"
 )
 
-type ExchangeService interface {
-	GetExchangeRateOffer(userId uint, request dto.ExchangeRateOfferRequest) (*dto.ExchangeRateOfferResponse, error)
-	AcceptExchangeRateOffer(userId uint, request dto.ExchangeAcceptOfferRequest) ([]dto.AccountWallet, error)
+type IExchangeService interface {
+	GetExchangeRateOffer(userId uint, request OfferRequest) (*OfferResponse, error)
+	AcceptExchangeRateOffer(userId uint, request AcceptOfferRequest) ([]account.WalletAccount, error)
 }
 
 type exchangeService struct {
-	exchangeRepo    repositories.ExchangeRepository
-	currencyService CurrencyService
-	accountService  AccountService
+	exchangeRepo    IExchangeRepository
+	currencyService currency.Service
+	accountService  account.IAccountService
 }
 
-func NewExchangeService(exchangeRepository repositories.ExchangeRepository, currencyService CurrencyService, accountService AccountService) ExchangeService {
+func NewExchangeService(exchangeRepository IExchangeRepository, currencyService currency.Service, accountService account.IAccountService) IExchangeService {
 	return &exchangeService{exchangeRepo: exchangeRepository, currencyService: currencyService, accountService: accountService}
 }
 
-func (s *exchangeService) GetExchangeRateOffer(userId uint, request dto.ExchangeRateOfferRequest) (*dto.ExchangeRateOfferResponse, error) {
+func (s *exchangeService) GetExchangeRateOffer(userId uint, request OfferRequest) (*OfferResponse, error) {
 	fromCurrencyCode := strings.ToUpper(request.FromCurrencyCode)
 	toCurrencyCode := strings.ToUpper(request.ToCurrencyCode)
 
 	for _, currencyCode := range []string{fromCurrencyCode, toCurrencyCode} {
-		if ok := s.currencyService.CheckCurrencyCodeIsExist(currencyCode); !ok {
+		if ok := s.currencyService.CheckIsCurrencyCodeExist(currencyCode); !ok {
 			return nil, errors.New("currency not found")
 		}
 	}
@@ -40,7 +39,7 @@ func (s *exchangeService) GetExchangeRateOffer(userId uint, request dto.Exchange
 	}
 
 	if ok := s.accountService.IsUserHasAccountOnGivenCurrency(userId, toCurrencyCode); !ok {
-		if err := s.accountService.CreateUserAccount(userId, toCurrencyCode); err != nil {
+		if _, err := s.accountService.CreateUserAccount(userId, toCurrencyCode, false); err != nil {
 			return nil, err
 		}
 	}
@@ -51,12 +50,12 @@ func (s *exchangeService) GetExchangeRateOffer(userId uint, request dto.Exchange
 	}
 
 	exchangeRateWithMarkupRate := exchange.ExchangeRate + exchange.MarkupRate
-	offerId, err := s.createExchangeRateOffer(userId, fromCurrencyCode, toCurrencyCode, exchangeRateWithMarkupRate)
+	offerId, err := s.CreateExchangeRateOffer(userId, fromCurrencyCode, toCurrencyCode, exchangeRateWithMarkupRate)
 	if err != nil {
 		return nil, err
 	}
 
-	return &dto.ExchangeRateOfferResponse{
+	return &OfferResponse{
 		OfferId:          offerId,
 		FromCurrencyCode: exchange.FromCurrencyCode,
 		ToCurrencyCode:   exchange.ToCurrencyCode,
@@ -64,8 +63,8 @@ func (s *exchangeService) GetExchangeRateOffer(userId uint, request dto.Exchange
 	}, nil
 }
 
-func (s *exchangeService) createExchangeRateOffer(userId uint, fromCurrencyCode, toCurrencyCode string, exchangeRate float64) (uint, error) {
-	offer := entity.Offer{
+func (s *exchangeService) CreateExchangeRateOffer(userId uint, fromCurrencyCode, toCurrencyCode string, exchangeRate float64) (uint, error) {
+	offer := Offer{
 		FromCurrencyCode: fromCurrencyCode,
 		ToCurrencyCode:   toCurrencyCode,
 		ExchangeRate:     exchangeRate,
@@ -75,15 +74,15 @@ func (s *exchangeService) createExchangeRateOffer(userId uint, fromCurrencyCode,
 		UpdatedAt:        time.Now(),
 	}
 
-	offerId, err := s.exchangeRepo.CreateOffer(offer)
+	createdOffer, err := s.exchangeRepo.CreateOffer(offer)
 	if err != nil {
 		return 0, err
 	}
 
-	return offerId, nil
+	return createdOffer.Id, nil
 }
 
-func (s *exchangeService) AcceptExchangeRateOffer(userId uint, request dto.ExchangeAcceptOfferRequest) ([]dto.AccountWallet, error) {
+func (s *exchangeService) AcceptExchangeRateOffer(userId uint, request AcceptOfferRequest) ([]account.WalletAccount, error) {
 	offer, err := s.exchangeRepo.GetOffer(request.OfferId)
 	if err != nil {
 		return nil, err
@@ -120,7 +119,7 @@ func (s *exchangeService) AcceptExchangeRateOffer(userId uint, request dto.Excha
 	return accountsWithBalances, nil
 }
 
-func (s *exchangeService) updateUserBalances(userId uint, offer entity.Offer, amount float64) error {
+func (s *exchangeService) updateUserBalances(userId uint, offer Offer, amount float64) error {
 	// Calculate from currency balance
 	fromCurrencyCode, fromBalance := s.calculateFromBalanceAfterAcceptedCurrencyConversion(offer, amount)
 	if err := s.accountService.UpdateUserBalanceOnGivenCurrencyAccount(userId, fromCurrencyCode, fromBalance); err != nil {
@@ -136,10 +135,10 @@ func (s *exchangeService) updateUserBalances(userId uint, offer entity.Offer, am
 	return nil
 }
 
-func (s *exchangeService) calculateToBalanceAfterAcceptedCurrencyConversion(offer entity.Offer, amount float64) (string, float64) {
+func (s *exchangeService) calculateToBalanceAfterAcceptedCurrencyConversion(offer Offer, amount float64) (string, float64) {
 	return offer.ToCurrencyCode, amount * offer.ExchangeRate
 }
 
-func (s *exchangeService) calculateFromBalanceAfterAcceptedCurrencyConversion(offer entity.Offer, amount float64) (string, float64) {
+func (s *exchangeService) calculateFromBalanceAfterAcceptedCurrencyConversion(offer Offer, amount float64) (string, float64) {
 	return offer.FromCurrencyCode, -1 * amount
 }

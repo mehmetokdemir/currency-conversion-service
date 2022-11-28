@@ -1,27 +1,27 @@
-package handlers
+package exchange
 
 import (
 	"github.com/asaskevich/govalidator"
 	"github.com/gin-gonic/gin"
-	"github.com/mehmetokdemir/currency-conversion-service/dto"
 	"github.com/mehmetokdemir/currency-conversion-service/errors"
 	"github.com/mehmetokdemir/currency-conversion-service/helper"
-	"github.com/mehmetokdemir/currency-conversion-service/internal/services"
+	"github.com/mehmetokdemir/currency-conversion-service/internal/common"
+	"github.com/mehmetokdemir/currency-conversion-service/internal/currency"
 	"net/http"
 )
 
-type ExchangeHandler interface {
+type Handler interface {
 	ExchangeRate(c *gin.Context)
 	AcceptOffer(c *gin.Context)
 	ExchangeRoutes(router *gin.RouterGroup)
 }
 
 type exchangeHandler struct {
-	currencyService services.CurrencyService
-	exchangeService services.ExchangeService
+	currencyService currency.Service
+	exchangeService IExchangeService
 }
 
-func NewExchangeHandler(currencyService services.CurrencyService, exchangeService services.ExchangeService) ExchangeHandler {
+func NewExchangeHandler(currencyService currency.Service, exchangeService IExchangeService) Handler {
 	return &exchangeHandler{currencyService: currencyService, exchangeService: exchangeService}
 }
 
@@ -37,15 +37,15 @@ func (h *exchangeHandler) ExchangeRoutes(router *gin.RouterGroup) {
 // @Accept  json
 // @Produce  json
 // @Param X-Auth-Token header string true "Auth token of logged-in user."
-// @Param request body dto.ExchangeRateOfferRequest true "body params"
-// @Success 200 {object} helper.Response{data=dto.ExchangeRateOfferResponse} "Success"
+// @Param request body OfferRequest true "body params"
+// @Success 200 {object} helper.Response{data=OfferResponse} "Success"
 // @Failure 400 {object} helper.Response{error=helper.ResponseError} "Bad Request"
 // @Failure 403 {object} helper.Response{error=helper.ResponseError} "Forbidden"
 // @Failure 404 {object} helper.Response{error=helper.ResponseError} "Not Found"
 // @Failure 500 {object} helper.Response{error=helper.ResponseError} "Internal Server Error"
 // @Router /exchange/rate [post]
 func (h *exchangeHandler) ExchangeRate(c *gin.Context) {
-	var req dto.ExchangeRateOfferRequest
+	var req OfferRequest
 	if err := c.BindJSON(&req); err != nil {
 		helper.Error(c, http.StatusBadRequest, errors.ErrBindJson.Error(), err.Error())
 		return
@@ -58,13 +58,13 @@ func (h *exchangeHandler) ExchangeRate(c *gin.Context) {
 		return
 	}
 
-	user, ok := getUserFromContext(c)
+	userId, ok := common.GetUserIdFromContext(c)
 	if !ok {
 		helper.Error(c, http.StatusNotFound, errors.ErrNotFoundError.Error(), "can not get user from context")
 		return
 	}
 
-	exchangeRateResponse, err := h.exchangeService.GetExchangeRateOffer(user.ID, req)
+	exchangeRateResponse, err := h.exchangeService.GetExchangeRateOffer(userId, req)
 	if err != nil {
 		helper.Error(c, http.StatusInternalServerError, errors.ErrExchangeOfferError.Error(), err.Error())
 		return
@@ -80,15 +80,15 @@ func (h *exchangeHandler) ExchangeRate(c *gin.Context) {
 // @Accept  json
 // @Produce  json
 // @Param X-Auth-Token header string true "Auth token of logged-in user."
-// @Param request body dto.ExchangeAcceptOfferRequest true "body params"
-// @Success 200 {object} helper.Response{data=[]dto.AccountWallet} "Success"
+// @Param request body AcceptOfferRequest true "body params"
+// @Success 200 {object} helper.Response{data=[]account.WalletAccount} "Success"
 // @Failure 400 {object} helper.Response{error=helper.ResponseError} "Bad Request"
 // @Failure 403 {object} helper.Response{error=helper.ResponseError} "Forbidden"
 // @Failure 404 {object} helper.Response{error=helper.ResponseError} "Not Found"
 // @Failure 500 {object} helper.Response{error=helper.ResponseError} "Internal Server Error"
 // @Router /exchange/accept/offer [post]
 func (h *exchangeHandler) AcceptOffer(c *gin.Context) {
-	var req dto.ExchangeAcceptOfferRequest
+	var req AcceptOfferRequest
 	if err := c.BindJSON(&req); err != nil {
 		helper.Error(c, http.StatusBadRequest, errors.ErrBindJson.Error(), err.Error())
 		return
@@ -101,13 +101,13 @@ func (h *exchangeHandler) AcceptOffer(c *gin.Context) {
 		return
 	}
 
-	user, ok := getUserFromContext(c)
+	userId, ok := common.GetUserIdFromContext(c)
 	if !ok {
 		helper.Error(c, http.StatusNotFound, errors.ErrNotFoundError.Error(), "can not get user from context")
 		return
 	}
 
-	accountsWithBalances, err := h.exchangeService.AcceptExchangeRateOffer(user.ID, req)
+	accountsWithBalances, err := h.exchangeService.AcceptExchangeRateOffer(userId, req)
 	if err != nil {
 		helper.Error(c, http.StatusInternalServerError, errors.ErrExchangeOfferAcceptedError.Error(), err.Error())
 		return
