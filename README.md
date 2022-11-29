@@ -27,8 +27,8 @@ make run
 
 Run with docker;
 ````shell
-docker build -t ${username}/${registry}:${tag} .
-docker run -p 8080:8080 ${username}/${registry}:${tag}
+docker-compose build 
+docker-compose up          
 ````
 
 Generate api docs;
