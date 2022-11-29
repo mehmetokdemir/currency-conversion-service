@@ -49,7 +49,7 @@ func (s *exchangeService) GetExchangeRateOffer(userId uint, request OfferRequest
 		return nil, err
 	}
 
-	exchangeRateWithMarkupRate := exchange.ExchangeRate + exchange.MarkupRate
+	exchangeRateWithMarkupRate := exchange.ExchangeRate - exchange.MarkupRate
 	offerId, err := s.CreateExchangeRateOffer(userId, fromCurrencyCode, toCurrencyCode, exchangeRateWithMarkupRate)
 	if err != nil {
 		return nil, err

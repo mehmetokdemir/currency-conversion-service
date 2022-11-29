@@ -18,13 +18,7 @@ type Handler interface {
 
 type userHandler struct {
 	userService IUserService
-	//accountService account.IAccountService
 }
-
-/*
-func NewUserHandler(userService IUserService, accountService account.IAccountService) Handler {
-	return &userHandler{userService: userService, accountService: accountService}
-} */
 
 func NewUserHandler(userService IUserService) Handler {
 	return &userHandler{userService: userService}
@@ -73,12 +67,6 @@ func (h *userHandler) Register(c *gin.Context) {
 		helper.Error(c, http.StatusInternalServerError, errors.ErrCreateError.Error(), err.Error())
 		return
 	}
-
-	/*
-		if err = h.accountService.CreateUserAccountOnRegistration(createdUser.Id, createdUser.DefaultCurrencyCode); err != nil {
-			helper.Error(c, http.StatusInternalServerError, errors.ErrCreateError.Error(), err.Error())
-			return
-		}*/
 
 	helper.Success(c, RegisterResponse{Username: createdUser.Username, Email: createdUser.Email})
 }
