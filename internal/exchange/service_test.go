@@ -60,11 +60,11 @@ func TestExchangeService_GetExchangeRateOffer(t *testing.T) {
 			OfferId:          uint(1),
 			FromCurrencyCode: fromCurrencyCode,
 			ToCurrencyCode:   toCurrencyCode,
-			ExchangeRate:     exchange.ExchangeRate + exchange.MarkupRate,
+			ExchangeRate:     exchange.ExchangeRate - exchange.MarkupRate,
 		}
 
 		mockExchangeRepository.EXPECT().GetExchangeRate(toCurrencyCode, toCurrencyCode).Return(exchange, nil)
-		assert.Equal(t, expectedResponse.ExchangeRate, 19.63)
+		assert.Equal(t, expectedResponse.ExchangeRate, 17.63)
 	})
 
 }
