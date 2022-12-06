@@ -5,11 +5,6 @@ Build locally;
 make build
 ```
 
-Build as docker image;
-```shell
-docker build -t ${username}/${registry}:${tag} .
-```
-
 Up to database with docker compose;
 ````shell
 docker-compose up -d
@@ -27,8 +22,7 @@ make run
 
 Run with docker;
 ````shell
-docker-compose build 
-docker-compose up          
+make run-with-docker       
 ````
 
 Generate api docs;
@@ -37,8 +31,9 @@ make generate-docs
 ````
 
 Swagger api documentation;
-`*/swagger/index.html`
-
+````shell
+*/swagger/index.html
+````
 
 Start golangci lint run 
 ````shell

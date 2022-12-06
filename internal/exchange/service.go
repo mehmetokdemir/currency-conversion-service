@@ -1,17 +1,21 @@
 package exchange
 
 import (
+	// Go imports
 	"errors"
 	"fmt"
-	"github.com/mehmetokdemir/currency-conversion-service/internal/account"
-	"github.com/mehmetokdemir/currency-conversion-service/internal/currency"
 	"strings"
 	"time"
+
+	// Internal imports
+	"github.com/mehmetokdemir/currency-conversion-service/internal/account"
+	"github.com/mehmetokdemir/currency-conversion-service/internal/currency"
 )
 
 type IExchangeService interface {
 	GetExchangeRateOffer(userId uint, request OfferRequest) (*OfferResponse, error)
 	AcceptExchangeRateOffer(userId uint, request AcceptOfferRequest) ([]account.WalletAccount, error)
+	CreateExchangeRateOffer(userId uint, fromCurrencyCode, toCurrencyCode string, exchangeRate float64) (uint, error)
 }
 
 type exchangeService struct {

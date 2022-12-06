@@ -1,10 +1,13 @@
 package config
 
 import (
+	// Go imports
 	"fmt"
+	"log"
+
+	// External imports
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
-	"log"
 )
 
 func Connect(dbConfig Config) *gorm.DB {

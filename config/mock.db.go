@@ -1,11 +1,14 @@
 package config
 
 import (
+	// Go imports
 	"fmt"
+	"log"
+
+	// External imports
 	"github.com/DATA-DOG/go-sqlmock"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
-	"log"
 )
 
 func ConnectMockDb() (*gorm.DB, sqlmock.Sqlmock) {

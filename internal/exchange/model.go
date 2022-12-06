@@ -1,8 +1,11 @@
 package exchange
 
 import (
-	"gorm.io/gorm"
+	// Go imports
 	"time"
+
+	// External imports
+	"gorm.io/gorm"
 )
 
 type Exchange struct {

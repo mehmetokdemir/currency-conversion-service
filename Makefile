@@ -1,11 +1,5 @@
 include META
 
-#LD flags
-LDFLAGS := -w
-
-#Environment Settings
-BUILD_ENV_SET_FOR_LINUX := $(RUN_ENV_SET) GOOS=linux
-
 .PHONY: generate-docs
 generate-docs:
 	@echo "[GENERATE DOCS] Generating API documents"
@@ -26,7 +20,7 @@ lint:
 .PHONY: test
 test:
 	@echo "Starting unit tests"
-	@go test -v -conver ./...
+	@go test -v  ./...
 
 .PHONY: mock
 mock:
@@ -47,6 +41,11 @@ build: tidy
 run:
 	@echo "[RUN] Running the service"
 	./bin/currency-conversion-service
+
+.PHONY: run-with-docker
+run-with-docker:
+	@echo "[RUN] Running the service as a docker image"
+	docker-compose up --build
 
 .PHONY: rwgocommand
 rwgocommand:

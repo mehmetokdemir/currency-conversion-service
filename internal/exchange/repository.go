@@ -1,9 +1,12 @@
 package exchange
 
 import (
+	// Go imports
+	"time"
+
+	// External imports
 	"github.com/pkg/errors"
 	"gorm.io/gorm"
-	"time"
 )
 
 type IExchangeRepository interface {

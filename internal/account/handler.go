@@ -1,12 +1,17 @@
 package account
 
 import (
+	// Go imports
+	"net/http"
+
+	// External imports
 	"github.com/gin-gonic/gin"
+
+	// Internal imports
 	"github.com/mehmetokdemir/currency-conversion-service/errors"
 	"github.com/mehmetokdemir/currency-conversion-service/helper"
 	"github.com/mehmetokdemir/currency-conversion-service/internal/common"
 	"github.com/mehmetokdemir/currency-conversion-service/internal/currency"
-	"net/http"
 )
 
 type Handler interface {

@@ -1,21 +1,28 @@
 package user
 
 import (
+	// Go imports
 	"errors"
+	"os"
+	"strings"
+	"time"
+
+	// External imports
 	"github.com/dgrijalva/jwt-go"
+	"golang.org/x/crypto/bcrypt"
+
+	// Internal imports
 	"github.com/mehmetokdemir/currency-conversion-service/config"
 	"github.com/mehmetokdemir/currency-conversion-service/dto"
 	"github.com/mehmetokdemir/currency-conversion-service/internal/account"
 	"github.com/mehmetokdemir/currency-conversion-service/internal/currency"
-	"golang.org/x/crypto/bcrypt"
-	"os"
-	"strings"
-	"time"
 )
 
 type IUserService interface {
 	CreateUser(user User) (*User, error)
 	CreateToken(username, password string) (*LoginResponse, error)
+	VerifyPassword(hashedPassword, requestedPassword string) bool
+	HashPassword(password string) (string, error)
 }
 
 type userService struct {
@@ -39,7 +46,7 @@ func (s *userService) CreateUser(user User) (*User, error) {
 		return nil, errors.New("currency not found")
 	}
 
-	hashedPassword, err := s.hashPassword(user.Password)
+	hashedPassword, err := s.HashPassword(user.Password)
 	if err != nil {
 		return nil, err
 	}
@@ -56,7 +63,7 @@ func (s *userService) CreateUser(user User) (*User, error) {
 		return nil, err
 	}
 
-	return &user, err
+	return &user, nil
 }
 
 func (s *userService) CreateToken(username, password string) (*LoginResponse, error) {
@@ -65,7 +72,7 @@ func (s *userService) CreateToken(username, password string) (*LoginResponse, er
 		return nil, err
 	}
 
-	if ok := s.verifyPassword(user.Password, password); !ok {
+	if ok := s.VerifyPassword(user.Password, password); !ok {
 		return nil, errors.New("password mismatch")
 	}
 
@@ -91,14 +98,14 @@ func (s *userService) CreateToken(username, password string) (*LoginResponse, er
 	}, nil
 }
 
-func (s *userService) verifyPassword(hashedPassword, requestedPassword string) bool {
+func (s *userService) VerifyPassword(hashedPassword, requestedPassword string) bool {
 	if err := bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(requestedPassword)); err == nil {
 		return true
 	}
 	return false
 }
 
-func (s *userService) hashPassword(password string) (string, error) {
+func (s *userService) HashPassword(password string) (string, error) {
 	bytes, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	return string(bytes), err
 }

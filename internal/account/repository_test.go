@@ -1,19 +1,23 @@
 package account
 
 import (
-	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/mehmetokdemir/currency-conversion-service/config"
-	"github.com/stretchr/testify/assert"
+	// Go imports
 	"regexp"
 	"testing"
 	"time"
+
+	// External imports
+	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/stretchr/testify/assert"
+
+	// Internal imports
+	"github.com/mehmetokdemir/currency-conversion-service/config"
 )
 
 func TestAccountRepository_CreateAccount(t *testing.T) {
 	t.Parallel()
 	db, mock := config.ConnectMockDb()
 	r := NewAccountRepository(db)
-
 	a := Account{
 		CurrencyCode: "EUR",
 		UserId:       uint(1),
@@ -23,23 +27,16 @@ func TestAccountRepository_CreateAccount(t *testing.T) {
 	}
 
 	mock.ExpectBegin()
-	mock.ExpectQuery(
-		regexp.QuoteMeta(` INSERT INTO "accounts" ("balance","created_at","updated_at","deleted_at",currency_code,"user_id") 
- 							VALUES ($1,$2,$3,$4,$5,$6) RETURNING "currency_code" AND "user_id"`)).
-		WithArgs(a.Balance, a.CreatedAt, a.UpdatedAt, nil, a.CurrencyCode, a.UserId).
-		WillReturnRows(
-			sqlmock.NewRows([]string{"currency_code", "user_id", "balance", "created_at", "updated_at", "deleted_at"}).
-				AddRow(a.CurrencyCode, a.UserId, a.Balance, a.CreatedAt, a.UpdatedAt, a.DeletedAt))
+	mock.ExpectExec(
+		regexp.QuoteMeta(`INSERT INTO "accounts" ("currency_code","user_id","balance","created_at","updated_at","deleted_at")
+	 												VALUES ($1,$2,$3,$4,$5,$6)`)).
+		WithArgs(a.CurrencyCode, a.UserId, a.Balance, a.CreatedAt, a.UpdatedAt, nil).
+		WillReturnResult(sqlmock.NewResult(0, 1))
 
 	mock.ExpectCommit()
 
-	account, err := r.CreateAccount(a)
+	_, err := r.CreateAccount(a)
 	assert.Nil(t, err)
-	assert.Equal(t, account.CurrencyCode, a.CurrencyCode)
-	assert.Equal(t, account.UserId, a.UserId)
-	assert.Equal(t, account.Balance, a.Balance)
-	assert.WithinDuration(t, account.CreatedAt, a.CreatedAt, 0)
-	assert.WithinDuration(t, account.UpdatedAt, a.UpdatedAt, 0)
 	errExpectations := mock.ExpectationsWereMet()
 	assert.Nil(t, errExpectations)
 }
@@ -134,13 +131,13 @@ func TestAccountRepository_UpdateUserBalanceOnGivenCurrencyAccount(t *testing.T)
 	userId := uint(1)
 	currencyCode := "TRY"
 	balance := float64(2500)
-	//mock.ExpectBegin()
 
+	mock.MatchExpectationsInOrder(false)
+	mock.ExpectBegin()
 	mock.ExpectExec(
-		regexp.QuoteMeta(` UPDATE "accounts" SET balance = $1,"updated_at" = $2
- 							WHERE user_id =$3 AND currency_code =$4 AND "accounts.deleted_at" IS NULL `)).
-		WithArgs(balance, time.Now(), userId, currencyCode).
-		WillReturnResult(sqlmock.NewResult(1, 1))
+		regexp.QuoteMeta(`UPDATE "accounts" SET "balance"=$1,"updated_at"=$2
+	 							WHERE user_id =$3 AND currency_code =$4 AND "accounts"."deleted_at" IS NULL`)).
+		WithArgs(balance, time.Now(), userId, currencyCode).WillReturnResult(sqlmock.NewResult(0, 1))
 
 	mock.ExpectCommit()
 	err := r.UpdateUserBalanceOnGivenCurrencyAccount(userId, currencyCode, balance)

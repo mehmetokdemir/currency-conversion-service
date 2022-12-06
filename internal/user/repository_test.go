@@ -1,13 +1,18 @@
 package user
 
 import (
-	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/google/uuid"
-	"github.com/mehmetokdemir/currency-conversion-service/config"
-	"github.com/stretchr/testify/assert"
+	// Go imports
 	"regexp"
 	"testing"
 	"time"
+
+	// External imports
+	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/google/uuid"
+	"github.com/stretchr/testify/assert"
+
+	// Internal imports
+	"github.com/mehmetokdemir/currency-conversion-service/config"
 )
 
 func TestUserRepository_CreateUser(t *testing.T) {
@@ -96,10 +101,6 @@ func TestUserRepository_IsUserExistWithSameEmail(t *testing.T) {
 	exist := r.IsUserExistWithSameEmail(u.Email)
 	assert.Nil(t, mock.ExpectationsWereMet())
 	assert.Equal(t, exist, true)
-}
-
-func TestUserRepository_Migration(t *testing.T) {
-	//db, mock := config.ConnectMockDb()
 }
 
 func TestUserRepository_IsUserExistWithSameUsername(t *testing.T) {

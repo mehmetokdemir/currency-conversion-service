@@ -1,9 +1,19 @@
 package main
 
 import (
+	// Go imports
 	"fmt"
+	"log"
+	"time"
+
+	// External imports
 	"github.com/asaskevich/govalidator"
 	"github.com/gin-gonic/gin"
+	"github.com/patrickmn/go-cache"
+	swaggerFiles "github.com/swaggo/files"
+	swagger "github.com/swaggo/gin-swagger"
+
+	// Internal imports
 	"github.com/mehmetokdemir/currency-conversion-service/config"
 	_ "github.com/mehmetokdemir/currency-conversion-service/docs"
 	"github.com/mehmetokdemir/currency-conversion-service/internal/account"
@@ -11,17 +21,10 @@ import (
 	"github.com/mehmetokdemir/currency-conversion-service/internal/exchange"
 	"github.com/mehmetokdemir/currency-conversion-service/internal/user"
 	"github.com/mehmetokdemir/currency-conversion-service/middleware"
-	swaggerFiles "github.com/swaggo/files"
-	swagger "github.com/swaggo/gin-swagger"
-	"log"
-	"time"
-
-	// External imports
-	"github.com/patrickmn/go-cache"
 )
 
 // @title Currency Conversion Service
-// @version 1.0.8
+// @version 1.0.12
 // @description Currency Conversion Service.
 // @BasePath /
 func main() {

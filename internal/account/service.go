@@ -1,9 +1,12 @@
 package account
 
 import (
-	"github.com/mehmetokdemir/currency-conversion-service/config"
+	// Go imports
 	"strings"
 	"time"
+
+	// Internal imports
+	"github.com/mehmetokdemir/currency-conversion-service/config"
 )
 
 type IAccountService interface {

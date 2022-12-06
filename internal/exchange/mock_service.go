@@ -49,6 +49,21 @@ func (mr *MockIExchangeServiceMockRecorder) AcceptExchangeRateOffer(arg0, arg1 i
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AcceptExchangeRateOffer", reflect.TypeOf((*MockIExchangeService)(nil).AcceptExchangeRateOffer), arg0, arg1)
 }
 
+// CreateExchangeRateOffer mocks base method.
+func (m *MockIExchangeService) CreateExchangeRateOffer(arg0 uint, arg1, arg2 string, arg3 float64) (uint, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateExchangeRateOffer", arg0, arg1, arg2, arg3)
+	ret0, _ := ret[0].(uint)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateExchangeRateOffer indicates an expected call of CreateExchangeRateOffer.
+func (mr *MockIExchangeServiceMockRecorder) CreateExchangeRateOffer(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateExchangeRateOffer", reflect.TypeOf((*MockIExchangeService)(nil).CreateExchangeRateOffer), arg0, arg1, arg2, arg3)
+}
+
 // GetExchangeRateOffer mocks base method.
 func (m *MockIExchangeService) GetExchangeRateOffer(arg0 uint, arg1 OfferRequest) (*OfferResponse, error) {
 	m.ctrl.T.Helper()

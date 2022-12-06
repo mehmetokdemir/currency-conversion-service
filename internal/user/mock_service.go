@@ -62,3 +62,32 @@ func (mr *MockIUserServiceMockRecorder) CreateUser(arg0 interface{}) *gomock.Cal
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateUser", reflect.TypeOf((*MockIUserService)(nil).CreateUser), arg0)
 }
+
+// HashPassword mocks base method.
+func (m *MockIUserService) HashPassword(arg0 string) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "HashPassword", arg0)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// HashPassword indicates an expected call of HashPassword.
+func (mr *MockIUserServiceMockRecorder) HashPassword(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HashPassword", reflect.TypeOf((*MockIUserService)(nil).HashPassword), arg0)
+}
+
+// VerifyPassword mocks base method.
+func (m *MockIUserService) VerifyPassword(arg0, arg1 string) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "VerifyPassword", arg0, arg1)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// VerifyPassword indicates an expected call of VerifyPassword.
+func (mr *MockIUserServiceMockRecorder) VerifyPassword(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "VerifyPassword", reflect.TypeOf((*MockIUserService)(nil).VerifyPassword), arg0, arg1)
+}

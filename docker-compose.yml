@@ -1,49 +1,38 @@
 version: '3.9'
 services:
-  db:
-    image: postgres:12.2-alpine
+  postgresdb:
+    image: postgres:latest
     container_name: currency-conversion
     volumes:
-      - data:/var/lib/postgresql/data
+      - database_postgres:/var/lib/postgresql/data
+    env_file:
+      - .env
     environment:
-      - POSTGRES_USER= postgres
-      - POSTGRES_PASSWORD= postgres
-      - POSTGRES_DB= postgres
-      - PGDATA= /var/lib/postgresql/data/pgdata
-      - POSTGRES_MULTIPLE_EXTENSIONS=postgis,hstore,postgis_topology,postgis_raster,pgrouting
-      - PASSWORD_AUTHENTICATION="md5"
+      - POSTGRES_HOST_AUTH_METHOD=trust
     ports:
       - "5432:5432"
-    healthcheck:
-      test: [ "CMD", "pg_isready", "-U", "postgres", "-d", "nakama" ]
-      interval: 3s
-      timeout: 3s
-      retries: 5
+    restart: always
     networks:
       - currency-conversion
   app:
     container_name: currency-conversion-service
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file: .env
     networks:
       - currency-conversion
     ports:
       - "8080:8080"
     restart: on-failure
     volumes:
-      - .:/app
+      - api:/usr/src/app/
     depends_on:
-      db:
-        condition: service_healthy
-    links:
-      - db
-    environment:
-      - POSTGRES_USER= postgres
-      - POSTGRES_PASSWORD= postgres
-      - POSTGRES_DB= postgres
-      - DATABASE_HOST= localhost
-      - DATABASE_PORT= 5432
+      - postgresdb
 volumes:
-  data:
+  api:
+  database_postgres:
 
 networks:
    currency-conversion:
+     driver: bridge

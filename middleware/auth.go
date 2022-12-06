@@ -1,13 +1,18 @@
 package middleware
 
 import (
+	// Go imports
+	"net/http"
+	"os"
+
+	// External imports
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
+
+	// Internal imports
 	"github.com/mehmetokdemir/currency-conversion-service/dto"
 	"github.com/mehmetokdemir/currency-conversion-service/errors"
 	"github.com/mehmetokdemir/currency-conversion-service/helper"
-	"net/http"
-	"os"
 )
 
 func middlewareError(statusCode int, message string, detail string) helper.Response {

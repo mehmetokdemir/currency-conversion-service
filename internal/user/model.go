@@ -1,8 +1,11 @@
 package user
 
 import (
-	"gorm.io/gorm"
+	// Go imports
 	"time"
+
+	// External imports
+	"gorm.io/gorm"
 )
 
 type User struct {

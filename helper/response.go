@@ -1,10 +1,13 @@
 package helper
 
 import (
-	"github.com/asaskevich/govalidator"
-	"github.com/gin-gonic/gin"
+	// Go imports
 	"net/http"
 	"strings"
+
+	// External imports
+	"github.com/asaskevich/govalidator"
+	"github.com/gin-gonic/gin"
 )
 
 type Response struct {

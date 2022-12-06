@@ -1,13 +1,17 @@
 package user
 
 import (
-	"github.com/asaskevich/govalidator"
-	"github.com/gin-gonic/gin"
-	"github.com/mehmetokdemir/currency-conversion-service/errors"
-	"github.com/mehmetokdemir/currency-conversion-service/helper"
-	//"github.com/mehmetokdemir/currency-conversion-service/internal/account"
+	// Go imports
 	"net/http"
 	"time"
+
+	// External imports
+	"github.com/asaskevich/govalidator"
+	"github.com/gin-gonic/gin"
+
+	// Internal imports
+	"github.com/mehmetokdemir/currency-conversion-service/errors"
+	"github.com/mehmetokdemir/currency-conversion-service/helper"
 )
 
 type Handler interface {
@@ -98,7 +102,7 @@ func (h *userHandler) Login(c *gin.Context) {
 	}
 
 	rsp, err := h.userService.CreateToken(req.Username, req.Password)
-	if err != nil {
+	if err != nil || rsp == nil {
 		helper.Error(c, http.StatusNotFound, errors.ErrCreateTokenError.Error(), err.Error())
 		return
 	}

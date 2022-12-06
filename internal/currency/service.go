@@ -1,11 +1,16 @@
 package currency
 
 import (
+	// Go imports
 	"encoding/json"
-	"github.com/go-resty/resty/v2"
-	"github.com/mehmetokdemir/currency-conversion-service/dto"
-	"github.com/patrickmn/go-cache"
 	"strings"
+
+	// External imports
+	"github.com/go-resty/resty/v2"
+	"github.com/patrickmn/go-cache"
+
+	// Internal imports
+	"github.com/mehmetokdemir/currency-conversion-service/dto"
 )
 
 type Service struct {

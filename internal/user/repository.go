@@ -1,8 +1,11 @@
 package user
 
 import (
+	// Go imports
 	"errors"
 	"fmt"
+
+	// External imports
 	_ "github.com/golang/mock/mockgen/model"
 	"gorm.io/gorm"
 )

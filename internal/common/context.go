@@ -1,6 +1,7 @@
 package common
 
 import (
+	// External imports
 	"github.com/gin-gonic/gin"
 )
 

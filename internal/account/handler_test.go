@@ -16,22 +16,55 @@ func TestAccountHandler_List(t *testing.T) {
 	httpHandler := NewAccountHandler(mockAccountService, currency.Service{})
 	gin.SetMode(gin.TestMode)
 	router := gin.Default()
-	router.POST("/list", httpHandler.List)
+	userId := uint(1)
+	auth := func(handler gin.HandlerFunc) gin.HandlerFunc {
+		return func(c *gin.Context) {
+			c.Set("user_id", userId)
+			c.Next()
+		}
+	}
 
 	t.Run("user not found in context", func(t *testing.T) {
-		reqTest := httptest.NewRequest(http.MethodPost, "/list", nil)
-		reqTest.Header.Set("Content-Type", "application/json")
-		rr := httptest.NewRecorder()
-
+		router.POST("/list", httpHandler.List)
 		req, err := http.NewRequest(http.MethodPost, "/list", nil)
-		assert.Nil(t, err)
+		if err != nil {
+			t.Fatalf("Could not create request: %v\n", err.Error())
+		}
 		req.Header.Set("Content-Type", "application/json")
-		req.Header.Set("X-Auth-Token", "Invalid Token")
-		router.ServeHTTP(rr, req)
-		assert.Equal(t, http.StatusForbidden, rr.Code)
+		w := httptest.NewRecorder()
+		router.ServeHTTP(w, req)
+		assert.Equal(t, http.StatusNotFound, w.Code)
 	})
 
-	t.Run("success", func(t *testing.T) {
+	t.Run("successfully list user wallet accounts", func(t *testing.T) {
+
+		router.POST("/list", auth(httpHandler.List))
+		walletAccounts := []WalletAccount{
+			{
+				CurrencyCode: "TRY",
+				Balance:      50,
+			},
+			{
+				CurrencyCode: "EUR",
+				Balance:      35,
+			},
+			{
+				CurrencyCode: "USD",
+				Balance:      60,
+			},
+		}
+
+		mockAccountService.EXPECT().ListUserAccounts(userId).Return(walletAccounts, nil)
+
+		req, err := http.NewRequest(http.MethodPost, "/list", nil)
+		if err != nil {
+			t.Fatalf("Could not create request: %v\n", err.Error())
+		}
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("X-Auth-Token", "app-token")
+		w := httptest.NewRecorder()
+		router.ServeHTTP(w, req)
+		assert.Equal(t, http.StatusOK, w.Code)
 
 	})
 }

@@ -1,8 +1,11 @@
 package account
 
 import (
-	"gorm.io/gorm"
+	// Go imports
 	"time"
+
+	// External imports
+	"gorm.io/gorm"
 )
 
 // Account Gorm model

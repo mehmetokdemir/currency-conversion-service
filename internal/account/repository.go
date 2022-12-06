@@ -1,7 +1,10 @@
 package account
 
 import (
+	// Go imports
 	"errors"
+
+	// External imports
 	"gorm.io/gorm"
 )
 

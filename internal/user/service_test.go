@@ -1,15 +1,20 @@
 package user
 
 import (
+	// Go imports
 	"errors"
-	"fmt"
+	"testing"
+	"time"
+
+	// External imports
 	"github.com/golang/mock/gomock"
+	"github.com/patrickmn/go-cache"
+	"github.com/stretchr/testify/assert"
+
+	// Internal imports
 	"github.com/mehmetokdemir/currency-conversion-service/config"
 	"github.com/mehmetokdemir/currency-conversion-service/internal/account"
 	"github.com/mehmetokdemir/currency-conversion-service/internal/currency"
-	"github.com/stretchr/testify/assert"
-	"testing"
-	"time"
 )
 
 func TestUserService_CreateToken(t *testing.T) {
@@ -79,35 +84,126 @@ func TestUserService_CreateUser(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	mockUserRepository := NewMockIUserRepository(ctrl)
 	accService := account.NewMockIAccountService(ctrl)
-	uService := NewUserService(mockUserRepository, config.Config{}, currency.Service{}, accService)
+	currencyService := currency.NewCurrencyService(cache.New(5*time.Minute, 10*time.Minute))
+	currencyService.SetLocalCacheToCurrencies()
+	mockUService := NewMockIUserService(ctrl)
+	uService := NewUserService(mockUserRepository, config.Config{}, currencyService, accService)
 
-	request := User{
-		Id:                  uint(1),
-		Username:            "test",
-		Email:               "test@gmail.com",
-		Password:            "123",
-		DefaultCurrencyCode: "TRY",
-		CreatedAt:           time.Now(),
-		UpdatedAt:           time.Now(),
-	}
+	t.Run("Duplicated user error with same email", func(t *testing.T) {
+		request := User{
+			Id:                  uint(1),
+			Username:            "test",
+			Email:               "test@gmail.com",
+			Password:            "123",
+			DefaultCurrencyCode: "TRY",
+			CreatedAt:           time.Now(),
+			UpdatedAt:           time.Now(),
+		}
 
-	expectedCreateUserResponse := &User{
-		Id:       request.Id,
-		Username: request.Username,
-		Email:    request.Email,
-		//Password:            "$2a$10$b86VMJDERpYuxCvVf6JvPuBHR7ipUQZzXmNm0/S3iA8Jp8votYY5y",
-		Password:            "$2a$10$zX0LxdfVFt8brzbXe2bPOeOkXwncb3PcLxdZOTX6cxi5KE9tBlgwG",
-		DefaultCurrencyCode: request.DefaultCurrencyCode,
-		CreatedAt:           request.CreatedAt,
-		UpdatedAt:           request.UpdatedAt,
-	}
+		mockUserRepository.EXPECT().IsUserExistWithSameEmail(request.Email).Return(true)
+		_, err := uService.CreateUser(request)
+		assert.NotNil(t, err)
+		assert.Error(t, err, "duplicated users")
+	})
 
-	mockUserRepository.EXPECT().IsUserExistWithSameUsername(request.Username).Return(false)
-	mockUserRepository.EXPECT().IsUserExistWithSameEmail(request.Email).Return(false)
-	mockUserRepository.EXPECT().CreateUser(request).Return(expectedCreateUserResponse, nil)
+	t.Run("Duplicated user error with same username", func(t *testing.T) {
+		request := User{
+			Id:                  uint(1),
+			Username:            "test",
+			Email:               "test@gmail.com",
+			Password:            "123",
+			DefaultCurrencyCode: "TRY",
+			CreatedAt:           time.Now(),
+			UpdatedAt:           time.Now(),
+		}
 
-	user, err := uService.CreateUser(request)
-	fmt.Println("user", user)
-	assert.Nil(t, err)
-	assert.Equal(t, expectedCreateUserResponse.Id, user.Id)
+		mockUserRepository.EXPECT().IsUserExistWithSameEmail(request.Email).Return(false)
+		mockUserRepository.EXPECT().IsUserExistWithSameUsername(request.Username).Return(true)
+		_, err := uService.CreateUser(request)
+		assert.NotNil(t, err)
+		assert.Error(t, err, "duplicated users")
+	})
+
+	t.Run("Invalid currency code error", func(t *testing.T) {
+		request := User{
+			Id:                  uint(1),
+			Username:            "test",
+			Email:               "test@gmail.com",
+			Password:            "123",
+			DefaultCurrencyCode: "AGH",
+			CreatedAt:           time.Now(),
+			UpdatedAt:           time.Now(),
+		}
+
+		mockUserRepository.EXPECT().IsUserExistWithSameEmail(request.Email).Return(false)
+		mockUserRepository.EXPECT().IsUserExistWithSameUsername(request.Username).Return(false)
+		ok := currencyService.CheckIsCurrencyCodeExist(request.DefaultCurrencyCode)
+		assert.False(t, ok)
+		_, err := uService.CreateUser(request)
+		assert.NotNil(t, err)
+		assert.Error(t, err, "currency not found")
+	})
+
+	t.Run("Successfully created user", func(t *testing.T) {
+		request := User{
+			Id:                  uint(1),
+			Username:            "test",
+			Email:               "test@gmail.com",
+			Password:            "123",
+			DefaultCurrencyCode: "TRY",
+			CreatedAt:           time.Now(),
+			UpdatedAt:           time.Now(),
+		}
+
+		mockUserRepository.EXPECT().IsUserExistWithSameEmail(request.Email).Return(false)
+		mockUserRepository.EXPECT().IsUserExistWithSameUsername(request.Username).Return(false)
+		ok := currencyService.CheckIsCurrencyCodeExist(request.DefaultCurrencyCode)
+		assert.True(t, ok)
+
+		hashedPassword, err := uService.HashPassword(request.Password)
+		assert.Nil(t, err)
+
+		expectedUser := User{
+			Id:                  request.Id,
+			Username:            request.Username,
+			Email:               request.Email,
+			Password:            request.Password,
+			DefaultCurrencyCode: request.DefaultCurrencyCode,
+			CreatedAt:           request.CreatedAt,
+			UpdatedAt:           request.UpdatedAt,
+		}
+
+		mockUserRepository.EXPECT().CreateUser(expectedUser).Return(&User{}, nil)
+		mockUService.EXPECT().HashPassword(request.Password).Return(hashedPassword, nil)
+		//accService.EXPECT().CreateUserAccount(expectedUser.Id, expectedUser.DefaultCurrencyCode, true).Return(nil, nil)
+		user, err := uService.CreateUser(request)
+		if err != nil {
+			t.Errorf("Not error expected, but got: %q", err.Error())
+		}
+		assert.Equal(t, user.Id, expectedUser.Id)
+	})
+}
+
+func TestUserService_MatchPassword(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	mockUserRepository := NewMockIUserRepository(ctrl)
+	accService := account.NewMockIAccountService(ctrl)
+	currencyService := currency.NewCurrencyService(cache.New(5*time.Minute, 10*time.Minute))
+	currencyService.SetLocalCacheToCurrencies()
+	uService := NewUserService(mockUserRepository, config.Config{}, currencyService, accService)
+
+	pass := "123"
+	t.Run("match password", func(t *testing.T) {
+		hashedPass, err := uService.HashPassword(pass)
+		assert.Nil(t, err)
+		ok := uService.VerifyPassword(hashedPass, pass)
+		assert.True(t, ok)
+	})
+
+	t.Run("miss match password", func(t *testing.T) {
+		hashedPass, err := uService.HashPassword(pass)
+		assert.Nil(t, err)
+		ok := uService.VerifyPassword(hashedPass, "1234")
+		assert.False(t, ok)
+	})
 }
