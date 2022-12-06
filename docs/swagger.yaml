@@ -179,7 +179,7 @@ info:
   contact: {}
   description: Currency Conversion Service.
   title: Currency Conversion Service
-  version: 1.0.8
+  version: 1.0.12
 paths:
   /account/list:
     get:
